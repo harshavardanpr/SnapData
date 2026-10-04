@@ -1,90 +1,18 @@
-(function () {
-  'use strict';
-  var $ = function (id) { return document.getElementById(id); };
-  var items = [], history = [], uid = 0, file = null, busy = false;
-
-  var NUM = /^[-+(]?[$€£¥₹]?\s*-?\d[\d,]*(\.\d+)?\s*%?\)?$|^[-+]?\.\d+$/;
-  function isNum(t) { return NUM.test(t.trim()); }
-  function toNum(t) {
-    var s = t.trim(), neg = /^\(.*\)$/.test(s);
-    var n = parseFloat(s.replace(/[^0-9.\-]/g, ''));
-    return neg ? -Math.abs(n) : n;
-  }
-  function fmt(n) { return String(Math.round(n * 1e10) / 1e10); }
-  function hasDigit(t) { return /\d/.test(t); }
-
-  function toast(msg) {
-    var t = $('toast'); t.textContent = msg; t.classList.add('on');
-    clearTimeout(toast.h); toast.h = setTimeout(function () { t.classList.remove('on'); }, 2200);
-  }
-  function setStatus(msg, err) { var s = $('status'); s.textContent = msg; s.className = 'status' + (err ? ' err' : ''); }
-
-  function snapshot() {
-    history.push(JSON.stringify(items)); if (history.length > 30) history.shift();
-    $('undo').disabled = false;
-  }
-  function add(text, o) { items.push({ id: ++uid, text: text, sel: false, o: o == null ? uid : o }); }
-
-  /* ---------- image handling ---------- */
-  function onFile(e) {
-    var f = e.target.files && e.target.files[0]; e.target.value = '';
-    if (!f) return;
-    if (!/^image\//.test(f.type)) { setStatus('Please choose an image file.', true); return; }
-    file = f;
-    $('preview').src = URL.createObjectURL(f);
-    $('previewWrap').hidden = false;
-    $('extractBtn').disabled = false; $('clearImg').disabled = false;
-    setStatus('Image ready. Choose Extract data.');
-  }
-  function clearImage() {
-    file = null; $('preview').removeAttribute('src'); $('previewWrap').hidden = true;
-    $('extractBtn').disabled = true; $('clearImg').disabled = true;
-    $('bar').hidden = true; setStatus('');
-  }
-  // Downscale big phone photos so OCR is faster and uses less memory.
   function prepare(f) {
-    return new Promise(function (res) {
-      var img = new Image(), url = URL.createObjectURL(f);
-      img.onload = function () {
-        var max = 2200, s = Math.min(1, max / Math.max(img.width, img.height));
-        var c = document.createElement('canvas');
-        c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
-        var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
-        x.drawImage(img, 0, 0, c.width, c.height);
-        URL.revokeObjectURL(url);
-        c.toBlob(function (b) { res(b || f); }, 'image/png');
-      };
-      img.onerror = function () { URL.revokeObjectURL(url); res(f); };
-      img.src = url;
-    });
+    var c=renderCanvas();if(!c)return Promise.resolve(f);var max=2200,scale=Math.min(1,max/Math.max(c.width,c.height)),o=document.createElement('canvas');o.width=Math.round(c.width*scale);o.height=Math.round(c.height*scale);var x=o.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,o.width,o.height);x.drawImage(c,0,0,o.width,o.height);return new Promise(function(res){o.toBlob(function(b){res(b||f)},'image/png')});
   }
-
-  /* ---------- OCR ---------- */
-  function extract() {
-    if (!file || busy) return;
-    if (typeof Tesseract === 'undefined') { setStatus('OCR library failed to load. Check your internet connection and reload.', true); return; }
-    busy = true; $('extractBtn').disabled = true;
-    var bar = $('bar'); bar.hidden = false; bar.value = 0;
-    setStatus('Preparing image…');
-    prepare(file).then(function (img) {
-      return Tesseract.recognize(img, 'eng', {
-        logger: function (m) {
-          if (m.status === 'recognizing text') { bar.value = Math.round(m.progress * 100); setStatus('Reading text… ' + bar.value + '%'); }
-          else if (m.status) { setStatus(m.status.charAt(0).toUpperCase() + m.status.slice(1) + '…'); }
-        }
-      });
-    }).then(function (r) {
-      var lines = (r.data.text || '').split(/\r?\n/).map(function (l) { return l.replace(/\s+$/, '').trim(); }).filter(Boolean);
-      if (!lines.length) { setStatus('No text found. Try a sharper, well-lit photo.', true); return; }
-      snapshot();
-      lines.forEach(function (l) { add(l); });
-      setStatus('Found ' + lines.length + ' lines. Edit, filter or export below.');
-      render();
-    }).catch(function (err) {
-      setStatus('Could not read the image: ' + (err && err.message ? err.message : 'unknown error'), true);
-    }).then(function () {
-      busy = false; $('extractBtn').disabled = !file; bar.hidden = true;
-    });
+  function tileCanvases(c){var max=2200,over=.12;if(Math.max(c.width,c.height)<=max)return [c];var long=Math.max(c.width,c.height),n=Math.ceil(long/(max*(1-over))),out=[],vertical=c.height>c.width,step=(vertical?c.height:c.width)/n;for(var i=0;i<n;i++){var st=Math.max(0,Math.round(i*step-step*over)),en=Math.min(vertical?c.height:c.width,Math.round((i+1)*step+step*over)),tw=vertical?c.width:en-st,th=vertical?en-st:c.height,t=document.createElement('canvas');t.width=tw;t.height=th;t.getContext('2d').drawImage(c,vertical?0:st,vertical?st:0,tw,th,0,0,tw,th);out.push(t)}return out}
+  function rowsFromWords(words){var rows=[];words.forEach(function(w){var t=(w.text||'').trim();if(!t)return;var cy=(w.bbox.y0+w.bbox.y1)/2,row=null;for(var i=0;i<rows.length;i++)if(Math.abs(cy-rows[i].cy)<Math.max(12,(w.bbox.y1-w.bbox.y0)*.65)){row=rows[i];break}if(!row){row={cy:cy,words:[]};rows.push(row)}row.words.push(w)});rows.sort(function(a,b){return a.cy-b.cy});return rows.map(function(row){row.words.sort(function(a,b){return a.bbox.x0-b.bbox.x0});var out='',last=null;row.words.forEach(function(w){if(last!==null&&w.bbox.x0-last>Math.max(18,(w.bbox.y1-w.bbox.y0)*1.5))out+='\t';else if(out)out+=' ';out+=(w.text||'').trim();last=w.bbox.x1});return out.trim()}).filter(Boolean)}
+  function extract(){
+    if(!file||busy)return;if(typeof Tesseract==='undefined'){setStatus('OCR library failed to load. Check your internet connection and reload.',true);return}
+    busy=true;$('extractBtn').disabled=true;var bar=$('bar');bar.hidden=false;bar.value=0;setStatus('Preparing image…');
+    var modeChoice=$('ocrMode').value,quality=$('quality').value,kind=modeChoice==='auto'?'table':modeChoice;
+    prepare(file).then(function(base){var canvas=document.createElement('canvas'),im=new Image();im.src=URL.createObjectURL(base);return new Promise(function(resolve){im.onload=function(){canvas.width=im.width;canvas.height=im.height;canvas.getContext('2d').drawImage(im,0,0);resolve(canvas)}})}).then(function(c){
+      var tiles=quality==='high'?tileCanvases(c):[c],results=[],idx=0;
+      function next(){if(idx>=tiles.length){finish();return}setStatus('Reading section '+(idx+1)+' of '+tiles.length+'…');var cfg={logger:function(m){if(m.status==='recognizing text'){bar.value=Math.round(((idx+m.progress)/tiles.length)*100);setStatus('Reading text… '+bar.value+'%')}}};if(kind==='numbers')cfg.config={tessedit_char_whitelist:'0123456789.,%$€£¥₹-+()'};Tesseract.recognize(tiles[idx],'eng',cfg).then(function(r){results.push(r);idx++;next()}).catch(function(){if(idx===0&&tiles.length>1){tiles=[c];idx=0;results=[];setStatus('Trying OCR fallback…');next()}else{setStatus('OCR failed.',true);done()}})}
+      function finish(){var lines=[];results.forEach(function(r){var got=(kind==='table'&&r.data.words)?rowsFromWords(r.data.words):(r.data.text||'').split(/\r?\n/).map(function(x){return x.trim()}).filter(Boolean);lines=lines.concat(got)});lines=lines.filter(function(x,i,a){return x&&a.indexOf(x)===i});if(!lines.length){setStatus('No text found. Try a sharper, well-lit photo.',true);done();return}snapshot();lines.forEach(function(l){add(l)});if(lines.some(function(l){return l.indexOf('\t')>=0}))table=lines.map(function(l){return l.split('\t')});setStatus('Found '+lines.length+' lines. Edit, organise or export below.');render();done()}
+      function done(){busy=false;$('extractBtn').disabled=!file;bar.hidden=true}next();
+    }).catch(function(e){setStatus('Could not read the image: '+(e.message||'unknown error'),true);busy=false;$('extractBtn').disabled=!file;bar.hidden=true});
   }
 
   /* ---------- view ---------- */
