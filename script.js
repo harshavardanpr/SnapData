@@ -1,3 +1,28 @@
+(function () {
+  'use strict';
+  var $=function(id){return document.getElementById(id);};
+  var items=[],history=[],uid=0,file=null,busy=false,sourceImg=null,edit={zoom:1,brightness:100,contrast:100,sharpen:0,rotation:0,crop:null},cropStart=null,table=[],mode='list';
+  var NUM=/^[-+(]?[$€£¥₹]?\s*-?\d[\d,]*(\.\d+)?\s*%?\)?$|^[-+]?\.\d+$/;
+  function isNum(t){return NUM.test(t.trim())}
+  function toNum(t){var s=t.trim(),neg=/^\(.*\)$/.test(s),n=parseFloat(s.replace(/[^0-9.\-]/g,''));return neg?-Math.abs(n):n}
+  function fmt(n){return String(Math.round(n*1e10)/1e10)}
+  function hasDigit(t){return /\d/.test(t)}
+  function toast(msg){var t=$('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(function(){t.classList.remove('on')},2200)}
+  function setStatus(msg,err){var s=$('status');s.textContent=msg;s.className='status'+(err?' err':'')}
+  function snapshot(){history.push(JSON.stringify({items:items,table:table}));if(history.length>30)history.shift();$('undo').disabled=false}
+  function add(text,o){items.push({id:++uid,text:text,sel:false,o:o==null?uid:o})}
+
+  function onFile(e){var f=e.target.files&&e.target.files[0];e.target.value='';if(!f)return;if(!/^image\//.test(f.type)){setStatus('Please choose an image file.',true);return}file=f;edit={zoom:1,brightness:100,contrast:100,sharpen:0,rotation:0,crop:null};loadSource(f);$('previewWrap').hidden=false;$('editor').hidden=false;$('extractBtn').disabled=false;$('clearImg').disabled=false;setStatus('Image ready. Enhance it, then extract.')}
+  function loadSource(f){var u=URL.createObjectURL(f),im=new Image();im.onload=function(){sourceImg=im;URL.revokeObjectURL(u);drawPreview()};im.src=u}
+  function renderCanvas(){if(!sourceImg)return null;var w=sourceImg.naturalWidth,h=sourceImg.naturalHeight,r=(edit.rotation%360+360)%360,c=document.createElement('canvas');c.width=(r===90||r===270)?h:w;c.height=(r===90||r===270)?w:h;var x=c.getContext('2d');x.save();x.translate(c.width/2,c.height/2);x.rotate(r*Math.PI/180);x.filter='brightness('+edit.brightness+'%) contrast('+edit.contrast+'%)';var sx=edit.crop?edit.crop.x:0,sy=edit.crop?edit.crop.y:0,sw=edit.crop?edit.crop.w:w,sh=edit.crop?edit.crop.h:h;x.drawImage(sourceImg,sx,sy,sw,sh,-sw/2,-sh/2,sw,sh);x.restore();if(edit.sharpen)sharpenCanvas(c,edit.sharpen);return c}
+  function sharpenCanvas(c,a){var x=c.getContext('2d'),d=x.getImageData(0,0,c.width,c.height),src=d.data,out=new Uint8ClampedArray(src),k=.12*a,w=c.width,h=c.height;for(var y=1;y<h-1;y++)for(var z=1;z<w-1;z++){var i=(y*w+z)*4;for(var q=0;q<3;q++)out[i+q]=Math.max(0,Math.min(255,src[i+q]*(1+4*k)-k*(src[i-4+q]+src[i+4+q]+src[i-w*4+q]+src[i+w*4+q])))}d.data.set(out);x.putImageData(d,0,0)}
+  function drawPreview(){var c=renderCanvas();if(!c)return;$('preview').src=c.toDataURL('image/jpeg',.9);$('preview').style.transform='scale('+edit.zoom+')'}
+  function saveEnhanced(){var c=renderCanvas();if(c)c.toBlob(function(b){downloadBlob('snapdata-enhanced.jpg',b)},'image/jpeg',.94)}
+  function downloadBlob(n,b){var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},1000)}
+  function resetEdit(){edit={zoom:1,brightness:100,contrast:100,sharpen:0,rotation:0,crop:null};$('zoom').value=100;$('brightness').value=100;$('contrast').value=100;$('sharpen').value=0;drawPreview()}
+  function applyCrop(){if(!sourceImg||!cropStart)return;var r=$('preview').getBoundingClientRect(),x=Math.min(cropStart.x,cropStart.ex),y=Math.min(cropStart.y,cropStart.ey),w=Math.abs(cropStart.ex-cropStart.x),h=Math.abs(cropStart.ey-cropStart.y);if(w<10||h<10)return;edit.crop={x:x/r.width*sourceImg.naturalWidth,y:y/r.height*sourceImg.naturalHeight,w:w/r.width*sourceImg.naturalWidth,h:h/r.height*sourceImg.naturalHeight};cropStart=null;drawPreview();toast('Crop applied')}
+  function clearImage(){file=null;sourceImg=null;$('preview').removeAttribute('src');$('previewWrap').hidden=true;$('editor').hidden=true;$('extractBtn').disabled=true;$('clearImg').disabled=true;$('bar').hidden=true;setStatus('')}
+
   function prepare(f) {
     var c=renderCanvas();if(!c)return Promise.resolve(f);var max=2200,scale=Math.min(1,max/Math.max(c.width,c.height)),o=document.createElement('canvas');o.width=Math.round(c.width*scale);o.height=Math.round(c.height*scale);var x=o.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,o.width,o.height);x.drawImage(c,0,0,o.width,o.height);return new Promise(function(res){o.toBlob(function(b){res(b||f)},'image/png')});
   }
