@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f3a2e">
+<title>SnapData – Photo to Data</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <h1>SnapData</h1>
+  <p>Photograph a page, list or table. Get editable data. Everything stays in your browser.</p>
+</header>
+
+<main>
+  <section class="panel" aria-labelledby="s1">
+    <h2 id="s1">1. Add a photo</h2>
+    <div class="row">
+      <label class="btn primary" for="cam">Take photo</label>
+      <label class="btn" for="up">Upload image</label>
+      <input id="cam" type="file" accept="image/*" capture="environment" hidden>
+      <input id="up" type="file" accept="image/*" hidden>
+    </div>
+    <div id="previewWrap" class="preview" hidden>
+      <img id="preview" alt="Selected image preview">
+    </div>
+    <div class="row">
+      <button id="extractBtn" class="btn primary" disabled>Extract data</button>
+      <button id="clearImg" class="btn" disabled>Clear image</button>
+    </div>
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+    <progress id="bar" max="100" value="0" hidden></progress>
+  </section>
+
+  <section class="panel" aria-labelledby="s2">
+    <h2 id="s2">2. Review and organise</h2>
+
+    <div class="tools">
+      <label>Show
+        <select id="filter">
+          <option value="all">All items</option>
+          <option value="num">Numbers only</option>
+          <option value="txt">Text only</option>
+        </select>
+      </label>
+      <label>Sort
+        <select id="sort">
+          <option value="orig">Original order</option>
+          <option value="az">A to Z</option>
+          <option value="za">Z to A</option>
+          <option value="lo">Number low to high</option>
+          <option value="hi">Number high to low</option>
+        </select>
+      </label>
+      <input id="search" type="search" placeholder="Search items" aria-label="Search items">
+    </div>
+
+    <div class="row wrap">
+      <button id="selAll" class="btn sm">Select shown</button>
+      <button id="selNone" class="btn sm">Deselect all</button>
+      <button id="addItem" class="btn sm">Add item</button>
+      <button id="split" class="btn sm" title="Split each line into separate cells">Split into cells</button>
+      <button id="dedupe" class="btn sm">Remove duplicates</button>
+      <button id="delSel" class="btn sm danger">Delete selected</button>
+      <button id="undo" class="btn sm" disabled>Undo</button>
+    </div>
+
+    <div class="count" id="count">No data yet.</div>
+    <ul id="list" class="list"></ul>
+    <p id="empty" class="empty">Nothing here yet. Add a photo and choose Extract data, or add items by hand.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="s3">
+    <h2 id="s3">3. Calculate</h2>
+    <p class="hint">Applies to selected items that are numbers.</p>
+    <div class="calc">
+      <select id="op" aria-label="Operation">
+        <option value="+">Add (+)</option>
+        <option value="-">Subtract (−)</option>
+        <option value="*">Multiply (×)</option>
+        <option value="/">Divide (÷)</option>
+      </select>
+      <input id="val" type="number" step="any" inputmode="decimal" placeholder="Your value" aria-label="Value">
+      <button id="applyCalc" class="btn primary">Apply to selected</button>
+    </div>
+    <div class="sums" id="sums">Select numbers to see their total.</div>
+  </section>
+
+  <section class="panel" aria-labelledby="s4">
+    <h2 id="s4">4. Copy or export</h2>
+    <p class="hint">Selected items are used when any are selected. Otherwise all items are used.</p>
+    <div class="row wrap">
+      <button id="copySel" class="btn">Copy selected</button>
+      <button id="copyAll" class="btn">Copy all</button>
+      <button id="expTxt" class="btn primary">Export TXT</button>
+      <button id="expCsv" class="btn primary">Export CSV</button>
+    </div>
+  </section>
+</main>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<footer>No accounts. No uploads. No tracking. Text recognition runs on your device.</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
