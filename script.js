@@ -15,6 +15,21 @@
     }).catch(function(e){setStatus('Could not read the image: '+(e.message||'unknown error'),true);busy=false;$('extractBtn').disabled=!file;bar.hidden=true});
   }
 
+  function buildTable(){if(!table.length)table=items.map(function(i){return i.text.split(/\t|\||\s{2,}/)});var cols=0;table.forEach(function(r){cols=Math.max(cols,r.length)});table.forEach(function(r){while(r.length<cols)r.push('')})}
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+  function syncItemsFromTable(){items=table.map(function(r,i){return{id:++uid,text:r.join('\t'),sel:false,o:i}})}
+  function selectedTableCells(){var out=[];$('tableWrap').querySelectorAll('.cell-check[data-r]:checked').forEach(function(i){out.push({r:+i.dataset.r,c:+i.dataset.c})});return out}
+  function renderTable(){buildTable();var w=$('tableWrap');if(!table.length){w.innerHTML='<p class="empty">No table yet. Extract a table first.</p>';return}var h='<div class="table-tools"><button id="tableSelectAll" class="btn sm">Select all cells</button><button id="tableClearSel" class="btn sm">Clear selection</button><button id="addRow" class="btn sm">Add row</button><button id="addCol" class="btn sm">Add column</button></div><table class="data-table"><thead><tr><th>#</th>';for(var c=0;c<table[0].length;c++)h+='<th><input class="cell-check col-check" type="checkbox" data-col="'+c+'" aria-label="Select column"></th>';h+='</tr></thead><tbody>';for(var r=0;r<table.length;r++){h+='<tr><th><input class="cell-check row-check" type="checkbox" data-row="'+r+'" aria-label="Select row"></th>';for(var j=0;j<table[r].length;j++)h+='<td><input class="cell-check" type="checkbox" data-r="'+r+'" data-c="'+j+'"><input class="cell-input" value="'+esc(table[r][j])+'" data-er="'+r+'" data-ec="'+j+'"></td>';h+='</tr>'}h+='</tbody></table>';w.innerHTML=h;
+    w.querySelectorAll('[data-er]').forEach(function(i){i.oninput=function(){table[+i.dataset.er][+i.dataset.ec]=i.value;syncItemsFromTable()}});
+    w.querySelectorAll('.cell-check:not(.row-check):not(.col-check)').forEach(function(i){i.onchange=function(){i.closest('td').classList.toggle('selected',i.checked)}});
+    w.querySelectorAll('.row-check').forEach(function(i){i.onchange=function(){w.querySelectorAll('[data-r="'+i.dataset.row+'"]').forEach(function(c){c.checked=i.checked;c.closest('td').classList.toggle('selected',i.checked)})}});
+    w.querySelectorAll('.col-check').forEach(function(i){i.onchange=function(){w.querySelectorAll('[data-c="'+i.dataset.col+'"]').forEach(function(c){c.checked=i.checked;c.closest('td').classList.toggle('selected',i.checked)})}});
+    $('tableSelectAll').onclick=function(){w.querySelectorAll('.cell-check').forEach(function(i){i.checked=true;if(i.closest('td'))i.closest('td').classList.add('selected')})};
+    $('tableClearSel').onclick=function(){w.querySelectorAll('.cell-check').forEach(function(i){i.checked=false;if(i.closest('td'))i.closest('td').classList.remove('selected')})};
+    $('addRow').onclick=function(){snapshot();table.push(table[0].map(function(){return ''}));syncItemsFromTable();renderTable()};
+    $('addCol').onclick=function(){snapshot();table.forEach(function(r){r.push('')});syncItemsFromTable();renderTable()};
+  }
+
   /* ---------- view ---------- */
   function visible() {
     var f = $('filter').value, q = $('search').value.trim().toLowerCase();
@@ -82,7 +97,7 @@
         out.push({ id: ++uid, text: c, sel: it.sel, o: it.o });
       });
     });
-    items = out; render(); toast('Split into cells');
+    items = out; table = items.map(function(i){return i.text.split(/\t|\||\s{2,}/)}); render(); toast('Split into cells');
   }
   function dedupe() {
     snapshot(); var seen = {};
@@ -101,6 +116,7 @@
   /* ---------- calculate ---------- */
   function calc() {
     var v = parseFloat($('val').value), op = $('op').value;
+    if(mode==='table'){var cells=selectedTableCells();if(!cells.length){toast('Select table cells first');return}if(isNaN(v)){toast('Enter a value first');return}if(op==='/'&&v===0){toast('Cannot divide by zero');return}snapshot();cells.forEach(function(p){if(isNum(table[p.r][p.c])){var n=toNum(table[p.r][p.c]);table[p.r][p.c]=fmt(op==='+'?n+v:op==='-'?n-v:op==='*'?n*v:n/v)}});syncItemsFromTable();renderTable();return}
     if (isNaN(v)) { toast('Enter a value first'); return; }
     if (op === '/' && v === 0) { toast('Cannot divide by zero'); return; }
     var t = items.filter(function (i) { return i.sel && isNum(i.text); });
@@ -139,6 +155,7 @@
   function csvCell(s) { return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
   function exportData(kind) {
     var list = pick(false);
+    if(kind==='xlsx'){if(typeof XLSX==='undefined'){toast('XLSX library not loaded');return}buildTable();var ws=XLSX.utils.aoa_to_sheet(table);var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'SnapData');XLSX.writeFile(wb,'snapdata.xlsx');toast('Exported XLSX');return}
     if (!list.length) { toast('Nothing to export'); return; }
     if (kind === 'txt') { download('snapdata.txt', 'text/plain', list.map(function (i) { return i.text; }).join('\n')); }
     else {
@@ -153,6 +170,12 @@
 
   /* ---------- wire up ---------- */
   $('cam').onchange = onFile; $('up').onchange = onFile;
+  $('saveEnhanced').onclick=saveEnhanced;$('resetEdit').onclick=resetEdit;$('rotL').onclick=function(){edit.rotation-=90;drawPreview()};$('rotR').onclick=function(){edit.rotation+=90;drawPreview()};
+  ['zoom','brightness','contrast','sharpen'].forEach(function(id){$(id).oninput=function(){edit[id]=id==='zoom'?+this.value/100:+this.value;drawPreview()}});
+  $('crop').onclick=function(){if(!cropStart){toast('Drag on the image first');return}applyCrop()};
+  $('preview').onpointerdown=function(e){var r=this.getBoundingClientRect();cropStart={x:e.clientX-r.left,y:e.clientY-r.top,ex:e.clientX-r.left,ey:e.clientY-r.top};this.setPointerCapture(e.pointerId)};
+  $('preview').onpointermove=function(e){if(cropStart){var r=this.getBoundingClientRect();cropStart.ex=e.clientX-r.left;cropStart.ey=e.clientY-r.top}};
+  $('preview').onpointerup=function(){if(cropStart)toast('Crop area selected — tap Crop')};
   $('extractBtn').onclick = extract; $('clearImg').onclick = clearImage;
   $('filter').onchange = render; $('sort').onchange = sortItems;
   $('search').oninput = render;
@@ -170,5 +193,9 @@
   $('copyAll').onclick = function () { copy(false); };
   $('expTxt').onclick = function () { exportData('txt'); };
   $('expCsv').onclick = function () { exportData('csv'); };
+  $('expXlsx').onclick=function(){exportData('xlsx')};
+  $('share').onclick=function(){var text=items.map(function(i){return i.text}).join('\n');if(navigator.share)navigator.share({title:'SnapData result',text:text}).catch(function(){});else copy(false)};
+  $('listTab').onclick=function(){mode='list';$('listTab').classList.add('active');$('tableTab').classList.remove('active');$('list').hidden=false;$('tableWrap').hidden=true;$('itemActions').hidden=false};
+  $('tableTab').onclick=function(){mode='table';buildTable();$('tableTab').classList.add('active');$('listTab').classList.remove('active');$('list').hidden=true;$('tableWrap').hidden=false;$('itemActions').hidden=true;renderTable()};
   render();
 })();
