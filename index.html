@@ -8,101 +8,28 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="top">
-  <h1>SnapData</h1>
-  <p>Photograph a page, list or table. Get editable data. Everything stays in your browser.</p>
-</header>
-
+<header class="top"><h1>SnapData</h1><p>Turn photos into clean, editable data. Your images stay in your browser.</p></header>
 <main>
-  <section class="panel" aria-labelledby="s1">
-    <h2 id="s1">1. Add a photo</h2>
-    <div class="row">
-      <label class="btn primary" for="cam">Take photo</label>
-      <label class="btn" for="up">Upload image</label>
-      <input id="cam" type="file" accept="image/*" capture="environment" hidden>
-      <input id="up" type="file" accept="image/*" hidden>
-    </div>
-    <div id="previewWrap" class="preview" hidden>
-      <img id="preview" alt="Selected image preview">
-    </div>
-    <div class="row">
-      <button id="extractBtn" class="btn primary" disabled>Extract data</button>
-      <button id="clearImg" class="btn" disabled>Clear image</button>
-    </div>
-    <div id="status" class="status" role="status" aria-live="polite"></div>
-    <progress id="bar" max="100" value="0" hidden></progress>
-  </section>
-
-  <section class="panel" aria-labelledby="s2">
-    <h2 id="s2">2. Review and organise</h2>
-
-    <div class="tools">
-      <label>Show
-        <select id="filter">
-          <option value="all">All items</option>
-          <option value="num">Numbers only</option>
-          <option value="txt">Text only</option>
-        </select>
-      </label>
-      <label>Sort
-        <select id="sort">
-          <option value="orig">Original order</option>
-          <option value="az">A to Z</option>
-          <option value="za">Z to A</option>
-          <option value="lo">Number low to high</option>
-          <option value="hi">Number high to low</option>
-        </select>
-      </label>
-      <input id="search" type="search" placeholder="Search items" aria-label="Search items">
-    </div>
-
-    <div class="row wrap">
-      <button id="selAll" class="btn sm">Select shown</button>
-      <button id="selNone" class="btn sm">Deselect all</button>
-      <button id="addItem" class="btn sm">Add item</button>
-      <button id="split" class="btn sm" title="Split each line into separate cells">Split into cells</button>
-      <button id="dedupe" class="btn sm">Remove duplicates</button>
-      <button id="delSel" class="btn sm danger">Delete selected</button>
-      <button id="undo" class="btn sm" disabled>Undo</button>
-    </div>
-
-    <div class="count" id="count">No data yet.</div>
-    <ul id="list" class="list"></ul>
-    <p id="empty" class="empty">Nothing here yet. Add a photo and choose Extract data, or add items by hand.</p>
-  </section>
-
-  <section class="panel" aria-labelledby="s3">
-    <h2 id="s3">3. Calculate</h2>
-    <p class="hint">Applies to selected items that are numbers.</p>
-    <div class="calc">
-      <select id="op" aria-label="Operation">
-        <option value="+">Add (+)</option>
-        <option value="-">Subtract (−)</option>
-        <option value="*">Multiply (×)</option>
-        <option value="/">Divide (÷)</option>
-      </select>
-      <input id="val" type="number" step="any" inputmode="decimal" placeholder="Your value" aria-label="Value">
-      <button id="applyCalc" class="btn primary">Apply to selected</button>
-    </div>
-    <div class="sums" id="sums">Select numbers to see their total.</div>
-  </section>
-
-  <section class="panel" aria-labelledby="s4">
-    <h2 id="s4">4. Copy or export</h2>
-    <p class="hint">Selected items are used when any are selected. Otherwise all items are used.</p>
-    <div class="row wrap">
-      <button id="copySel" class="btn">Copy selected</button>
-      <button id="copyAll" class="btn">Copy all</button>
-      <button id="expTxt" class="btn primary">Export TXT</button>
-      <button id="expCsv" class="btn primary">Export CSV</button>
-    </div>
-  </section>
-</main>
-
-<div id="toast" class="toast" role="status" aria-live="polite"></div>
-<footer>No accounts. No uploads. No tracking. Text recognition runs on your device.</footer>
-
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-<script src="script.js"></script>
-</body>
-</html>
+<section class="panel"><h2>1. Add and enhance a photo</h2>
+<div class="row wrap"><label class="btn primary" for="cam">Take photo</label><label class="btn" for="up">Upload image</label>
+<input id="cam" type="file" accept="image/*" capture="environment" hidden><input id="up" type="file" accept="image/*" hidden></div>
+<div id="previewWrap" class="preview" hidden><img id="preview" alt="Selected image preview"></div>
+<div id="editor" class="editor" hidden>
+<div class="editor-grid"><label>Zoom <input id="zoom" type="range" min="50" max="250" value="100"></label><label>Brightness <input id="brightness" type="range" min="50" max="180" value="100"></label><label>Contrast <input id="contrast" type="range" min="50" max="180" value="100"></label><label>Sharpen <input id="sharpen" type="range" min="0" max="3" value="0"></label></div>
+<div class="row wrap"><button id="rotL" class="btn sm">↶ Rotate</button><button id="rotR" class="btn sm">↷ Rotate</button><button id="crop" class="btn sm">Crop</button><button id="resetEdit" class="btn sm">Reset edits</button><button id="saveEnhanced" class="btn sm">Save enhanced image</button></div>
+<p class="hint">Crop: drag on the image to choose an area, then tap Crop.</p></div>
+<div class="row"><button id="extractBtn" class="btn primary" disabled>Extract data</button><button id="clearImg" class="btn" disabled>Clear image</button></div>
+<div class="ocr-options"><label>Recognition<select id="ocrMode"><option value="auto">Auto (text + table)</option><option value="text">Text / lists</option><option value="numbers">Numbers</option><option value="table">Table</option></select></label><label>Quality<select id="quality"><option value="auto">Auto</option><option value="high">High resolution / small text</option><option value="fast">Fast</option></select></label></div>
+<div id="status" class="status" role="status" aria-live="polite"></div><progress id="bar" max="100" value="0" hidden></progress>
+</section>
+<section class="panel"><h2>2. Review and organise</h2>
+<div class="tabs"><button id="listTab" class="tab active">Items</button><button id="tableTab" class="tab">Table</button></div>
+<div class="tools"><label>Show<select id="filter"><option value="all">All items</option><option value="num">Numbers only</option><option value="txt">Text only</option></select></label><label>Sort<select id="sort"><option value="orig">Original order</option><option value="az">A to Z</option><option value="za">Z to A</option><option value="lo">Number low to high</option><option value="hi">Number high to low</option></select></label><input id="search" type="search" placeholder="Search items" aria-label="Search items"></div>
+<div id="itemActions" class="row wrap"><button id="selAll" class="btn sm">Select shown</button><button id="selNone" class="btn sm">Deselect all</button><button id="addItem" class="btn sm">Add item</button><button id="split" class="btn sm">Split into cells</button><button id="dedupe" class="btn sm">Remove duplicates</button><button id="delSel" class="btn sm danger">Delete selected</button><button id="undo" class="btn sm" disabled>Undo</button></div>
+<div id="count" class="count">No data yet.</div><ul id="list" class="list"></ul><div id="tableWrap" class="table-wrap" hidden></div><p id="empty" class="empty">Nothing here yet. Add a photo and choose Extract data, or add items by hand.</p>
+</section>
+<section class="panel"><h2>3. Calculate</h2><p class="hint">For item mode, calculations apply to selected numbers. In table mode, use the checkboxes to select cells.</p><div class="calc"><select id="op"><option value="+">Add (+)</option><option value="-">Subtract (−)</option><option value="*">Multiply (×)</option><option value="/">Divide (÷)</option></select><input id="val" type="number" step="any" inputmode="decimal" placeholder="Your value"><button id="applyCalc" class="btn primary">Apply to selected</button></div><div class="sums" id="sums">Select numbers to see their total.</div></section>
+<section class="panel"><h2>4. Copy, share or export</h2><div class="row wrap"><button id="copySel" class="btn">Copy selected</button><button id="copyAll" class="btn">Copy all</button><button id="share" class="btn">Share</button><button id="expTxt" class="btn primary">Export TXT</button><button id="expCsv" class="btn primary">Export CSV</button><button id="expXlsx" class="btn primary">Export XLSX</button></div><p class="hint">XLSX export uses the free SheetJS browser library. No data is sent to a server.</p></section>
+</main><div id="toast" class="toast" role="status" aria-live="polite"></div><footer>No accounts. No ads. No uploads. OCR and image editing run in your browser.</footer>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="script.js"></script>
+</body></html>
