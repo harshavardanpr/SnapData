@@ -138,3 +138,27 @@ footer{max-width:850px;margin:auto;line-height:1.6;padding:20px 18px 28px}
 #ttOutput{display:block;width:100%;min-height:220px;resize:vertical;font: .94rem/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre;tab-size:4}
 #ttOutputWrap>label{display:block;font-weight:700;margin:10px 0 6px}
 #ttOutputWrap .hint{font-weight:400}
+
+
+/* Teacher workspace */
+.tool-switcher{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 20px}
+.tool-switcher .tab{border:1px solid var(--line);border-radius:999px;padding:9px 13px;background:var(--card);color:var(--ink);cursor:pointer}
+.tool-switcher .tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+.teacher-tool h3{margin:8px 0}
+.editable-grid{overflow:auto;max-width:100%;margin:12px 0}
+.editable-grid table{border-collapse:collapse;width:100%;min-width:560px;background:var(--card)}
+.editable-grid td,.editable-grid th{border:1px solid var(--line);padding:9px 10px;min-width:90px;text-align:left;vertical-align:top}
+.editable-grid th{background:var(--bg);font-weight:700}
+.editable-grid td[contenteditable=true]{background:var(--card);min-width:105px;outline-offset:-2px}
+.editable-grid td[contenteditable=true]:focus{outline:2px solid var(--accent);background:#fffdf5}
+.editable-grid input{width:100%;min-width:72px;max-width:180px;padding:7px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:12px;margin:12px 0}
+.form-grid label,.teacher-tool>label{display:flex;flex-direction:column;gap:6px}
+.form-grid input,.teacher-tool textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font:inherit}
+.saved-list{display:grid;gap:10px;margin-top:14px}
+.saved-card,.question-card{display:block;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card);overflow-wrap:anywhere}
+.saved-card p{margin:7px 0}
+.question-card span{display:block;font-weight:700;margin-bottom:7px}
+.question-card textarea{display:block}
+@media(max-width:560px){.tool-switcher{gap:6px}.tool-switcher .tab{padding:8px 10px;font-size:.9rem}.editable-grid td,.editable-grid th{padding:7px;min-width:88px}}
+@media print{body *{visibility:hidden}.teacher-tool:has(#worksheetOutput) #worksheetOutput,.teacher-tool:has(#worksheetOutput) #worksheetOutput *{visibility:visible}.teacher-tool:has(#worksheetOutput) #worksheetOutput{position:absolute;left:0;top:0;width:100%}}
