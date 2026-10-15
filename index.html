@@ -21,6 +21,7 @@
   <button class="page-link" type="button" data-page="export"><span class="nav-icon">⇧</span><span>Copy &amp; Export</span></button>
   <button class="page-link" type="button" data-page="summary"><span class="nav-icon">✦</span><span>Summarise</span></button>
   <button class="page-link" type="button" data-page="timetable"><span class="nav-icon">▦</span><span>TT Copier</span></button>
+  <button class="page-link" type="button" data-page="teacher-tools"><span class="nav-icon">✎</span><span>Teacher Tools</span></button>
 </nav>
 <main>
 <div class="app-page" id="page-extract">
@@ -77,6 +78,36 @@
 <div class="row wrap"><button id="ttCopy" class="btn primary" type="button">Copy timetable</button><button id="ttCsv" class="btn" type="button">Export CSV</button><button id="ttClear" class="btn" type="button">Clear</button></div></div>
 </section>
 </div>
+<div class="app-page" id="page-teacher-tools" hidden>
+<section class="panel"><h2>Teacher workspace</h2><p class="hint">Local-first tools for classroom work. Your entries are saved on this device until you export or clear them.</p>
+<div class="tool-switcher" role="tablist" aria-label="Teacher tools">
+<button class="tab active" type="button" data-tool="tt-grid">Timetable grid</button><button class="tab" type="button" data-tool="marks">Marks</button><button class="tab" type="button" data-tool="class-log">Class log</button><button class="tab" type="button" data-tool="worksheet">Worksheet</button><button class="tab" type="button" data-tool="notes">Teacher notes</button><button class="tab" type="button" data-tool="backup">Privacy &amp; backup</button>
+</div>
+<div class="teacher-tool" id="tool-tt-grid">
+<h3>Editable timetable grid</h3><p class="hint">Paste tab-separated timetable text from TT Copier, or start with a blank grid. Edit cells directly, then save or export.</p>
+<div class="row wrap"><button class="btn" type="button" id="gridFromTT">Import from TT Copier</button><button class="btn" type="button" id="gridBlank">Blank timetable</button><button class="btn primary" type="button" id="gridAddRow">Add row</button><button class="btn" type="button" id="gridAddCol">Add column</button><button class="btn" type="button" id="gridSave">Save on this device</button><button class="btn" type="button" id="gridCsv">Export CSV</button><button class="btn" type="button" id="gridCopy">Copy TSV</button></div>
+<div id="ttGrid" class="table-wrap editable-grid" aria-label="Editable timetable grid"></div><p id="gridStatus" class="status" role="status" aria-live="polite"></p>
+</div>
+<div class="teacher-tool" id="tool-marks" hidden>
+<h3>Marks copier &amp; calculator</h3><p class="hint">Enter one learner per row. Use a column heading such as Maths /20 or Science /50 to set maximum marks. Totals and percentages are calculated locally.</p>
+<div class="row wrap"><button class="btn" id="marksAdd" type="button">Add learner</button><button class="btn" id="marksSave" type="button">Save marks</button><button class="btn" id="marksCsv" type="button">Export CSV</button><button class="btn" id="marksCopy" type="button">Copy table</button></div>
+<div id="marksGrid" class="table-wrap editable-grid"></div><p id="marksStatus" class="status" role="status" aria-live="polite"></p>
+</div>
+<div class="teacher-tool" id="tool-class-log" hidden>
+<h3>Daily class log</h3><div class="form-grid"><label>Date<input id="logDate" type="date"></label><label>Class<input id="logClass" placeholder="e.g. Grade 7B"></label><label>Subject<input id="logSubject" placeholder="Subject"></label><label>Lesson covered<input id="logLesson" placeholder="Topic or lesson"></label><label>Homework<input id="logHomework" placeholder="Homework / due date"></label><label>Attendance or notes<input id="logNotes" placeholder="Optional notes"></label></div>
+<div class="row wrap"><button class="btn primary" id="logSave" type="button">Save log entry</button><button class="btn" id="logExport" type="button">Export CSV</button></div><div id="logEntries" class="saved-list"></div>
+</div>
+<div class="teacher-tool" id="tool-worksheet" hidden>
+<h3>Worksheet question organiser</h3><p class="hint">Paste OCR output or type questions. The tool splits numbered questions into editable entries. Review the text before printing or copying.</p><textarea id="worksheetInput" rows="9" placeholder="1. First question&#10;2. Second question"></textarea><div class="row wrap"><button class="btn primary" id="worksheetSplit" type="button">Organise questions</button><button class="btn" id="worksheetCopy" type="button">Copy organised text</button><button class="btn" id="worksheetPrint" type="button">Print worksheet</button></div><div id="worksheetOutput" class="saved-list"></div>
+</div>
+<div class="teacher-tool" id="tool-notes" hidden>
+<h3>Teacher notes</h3><div class="form-grid"><label>Subject or class<input id="noteSubject" placeholder="e.g. Science · 7B"></label><label>Topic<input id="noteTopic" placeholder="Topic title"></label></div><label for="noteBody">Notes</label><textarea id="noteBody" rows="7" placeholder="Type or paste notes here…"></textarea><div class="row wrap"><button class="btn primary" id="noteSave" type="button">Save note</button><button class="btn" id="noteSummarise" type="button">Make key points locally</button><button class="btn" id="noteCopy" type="button">Copy notes</button></div><div id="noteOutput" class="saved-list"></div>
+</div>
+<div class="teacher-tool" id="tool-backup" hidden>
+<h3>Privacy, backup &amp; install</h3><p>SnapData stores these teacher-tool entries in this browser on this device. They are not uploaded to a server. Anyone who can use this browser profile may be able to access them, so avoid storing sensitive student information on shared devices.</p>
+<div class="row wrap"><button class="btn primary" id="backupExport" type="button">Export teacher-tool backup</button><label class="btn" for="backupImport">Import backup</label><input id="backupImport" type="file" accept="application/json,.json" hidden><button class="btn danger" id="backupClear" type="button">Clear teacher-tool data</button><button class="btn" id="showInstallHelp" type="button">How to install SnapData</button></div><p class="hint">Offline app shell can open without internet after caching, but OCR libraries, AI summaries and some exports may need a connection. Do not include sensitive records in a backup unless you can store it securely.</p><p id="backupStatus" class="status" role="status" aria-live="polite"></p>
+</div>
+</section></div>
 </main><div id="toast" class="toast" role="status" aria-live="polite"></div><footer>No accounts. No ads. Photos stay in your browser for OCR and editing. Summary text is sent to Gemini only when you request a summary.</footer>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="script.js"></script><script src="timetable.js"></script><script src="pwa.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="script.js"></script><script src="timetable.js"></script><script src="teacher-tools.js"></script><script src="pwa.js"></script>
 </body></html>
