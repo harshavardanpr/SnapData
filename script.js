@@ -93,21 +93,21 @@
   function detectStructuredTable(lines){
     var clean=lines.map(function(x){return String(x||'').trim()}).filter(Boolean);
     if(clean.length<2)return null;
-    var tabbed=clean.map(function(x){return x.split('\\t').map(function(c){return c.trim()})});
+    var tabbed=clean.map(function(x){return x.split('\t').map(function(c){return c.trim()})});
     if(tabbed.filter(function(r){return r.length>1}).length>=2){
       var tc=Math.max.apply(null,tabbed.map(function(r){return r.length}));
       var consistent=tabbed.filter(function(r){return r.length>1&&r.length>=tc-1}).length;
       if(consistent>=Math.ceil(clean.length*.6))return tabbed;
     }
-    var kv=clean.map(function(line){var m=line.match(/^(.{2,45}?)\\s*[:=]\\s*(.+)$/);if(!m)m=line.match(/^([A-Za-z][A-Za-z _()/-]{1,35}?)\\s+[-–—]\\s+(.+)$/);return m?[m[1].trim(),m[2].trim()]:null});
+    var kv=clean.map(function(line){var m=line.match(/^(.{2,45}?)\s*[:=]\s*(.+)$/);if(!m)m=line.match(/^([A-Za-z][A-Za-z _()/-]{1,35}?)\s+[-–—]\s+(.+)$/);return m?[m[1].trim(),m[2].trim()]:null});
     if(kv.filter(Boolean).length>=Math.max(3,Math.ceil(clean.length*.65))&&kv.filter(Boolean).length===clean.length)
       return [['Field','Value']].concat(kv);
     var candidates=[
       {split:function(x){return x.split('|')},weight:5},
-      {split:function(x){return x.split('\\t')},weight:6},
+      {split:function(x){return x.split('\t')},weight:6},
       {split:function(x){return x.split(';')},weight:4},
       {split:function(x){return x.split(',')},weight:3},
-      {split:function(x){return x.split(/\\s{2,}/)},weight:4}
+      {split:function(x){return x.split(/\s{2,}/)},weight:4}
     ],best=null;
     candidates.forEach(function(c){
       var rows=clean.map(function(x){return c.split(x).map(function(v){return v.trim()})});
@@ -280,7 +280,7 @@
     return out.join('\n');
   }
   function copy(selectedOnly) {
-    var text='',count=0,hasTabularItems=items.some(function(i){return i.text.indexOf('\\t')>=0}),copyAsTable=mode==='table'||(table.length>0&&hasTabularItems);
+    var text='',count=0,hasTabularItems=items.some(function(i){return i.text.indexOf('\t')>=0}),copyAsTable=mode==='table'||(table.length>0&&hasTabularItems);
     if(copyAsTable){
       var cells=selectedOnly&&mode==='table'?selectedTableCells():[];
       if(selectedOnly&&mode==='table'&&!cells.length){toast('Select some table cells first');return}
