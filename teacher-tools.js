@@ -2,7 +2,8 @@
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
   var KEY = 'snapdata.teacherTools.v1';
-  var state = { timetable: [], marks: [], logs: [], notes: [] };
+  var state = { timetable: [], marks: [], logs: [], notes: [], homework: [] };
+  var editingHomework = null;
   function safeRead() {
     try {
       var saved = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -10,6 +11,7 @@
       state.marks = Array.isArray(saved.marks) ? saved.marks : [];
       state.logs = Array.isArray(saved.logs) ? saved.logs : [];
       state.notes = Array.isArray(saved.notes) ? saved.notes : [];
+      state.homework = Array.isArray(saved.homework) ? saved.homework : [];
     } catch (_) {}
   }
   function persist() {
@@ -129,6 +131,110 @@
       });
     });
   }
+
+  function todayISO() { return new Date().toISOString().slice(0, 10); }
+  function setHomeworkFormDefaults() {
+    if (!$('hwAssigned')) return;
+    $('hwAssigned').value = todayISO();
+    $('hwDue').value = todayISO();
+    $('hwClass').value = '';
+    $('hwSubject').value = '';
+    $('hwTitle').value = '';
+    $('hwDetails').value = '';
+    $('hwStatus').value = 'Assigned';
+    editingHomework = null;
+    $('hwFormHeading').textContent = 'Add homework';
+    $('hwSave').textContent = 'Save homework';
+    $('hwCancelEdit').hidden = true;
+  }
+  function renderHomework() {
+    var today = todayISO();
+    var soonDate = new Date(); soonDate.setDate(soonDate.getDate() + 7);
+    var soon = soonDate.toISOString().slice(0, 10);
+    var active = state.homework.filter(function (h) { return h.status === 'Assigned'; });
+    $('hwActiveCount').textContent = active.length;
+    $('hwSoonCount').textContent = active.filter(function (h) { return h.dueDate && h.dueDate >= today && h.dueDate <= soon; }).length;
+    $('hwOverdueCount').textContent = active.filter(function (h) { return h.dueDate && h.dueDate < today; }).length;
+    var classFilter = $('hwFilterClass').value.trim().toLowerCase();
+    var query = $('hwSearch').value.trim().toLowerCase();
+    var statusFilter = $('hwFilterStatus').value;
+    var rows = state.homework.map(function (h, i) { return { h: h, i: i }; }).filter(function (entry) {
+      var h = entry.h;
+      if (classFilter && String(h.className).toLowerCase().indexOf(classFilter) < 0) return false;
+      if (statusFilter === 'active' && h.status !== 'Assigned') return false;
+      if (statusFilter !== 'active' && statusFilter !== 'all' && h.status !== statusFilter) return false;
+      if (query && [h.subject, h.title, h.details, h.className].join(' ').toLowerCase().indexOf(query) < 0) return false;
+      return true;
+    }).sort(function (a, b) {
+      return String(a.h.dueDate || '9999-99-99').localeCompare(String(b.h.dueDate || '9999-99-99'));
+    });
+    $('hwAssignments').innerHTML = rows.length ? rows.map(function (entry) {
+      var h = entry.h, i = entry.i;
+      var overdue = h.status === 'Assigned' && h.dueDate && h.dueDate < today;
+      var dueLabel = h.dueDate ? (overdue ? 'OVERDUE · ' : 'Due · ') + h.dueDate : 'No due date';
+      return '<article class="saved-card homework-card"><div class="homework-card-top"><div><strong>' + esc(h.title) + '</strong><p class="hint">' + esc(h.className) + ' · ' + esc(h.subject) + '</p></div><span class="homework-status ' + (overdue ? 'overdue' : h.status === 'Completed' ? 'complete' : h.status === 'Cancelled' ? 'cancelled' : '') + '">' + esc(overdue ? 'Overdue' : h.status) + '</span></div><p><b>' + esc(dueLabel) + '</b> <span class="hint">· Assigned ' + esc(h.assignedDate || 'date unknown') + '</span></p>' + (h.details ? '<p>' + esc(h.details).replace(/\n/g, '<br>') + '</p>' : '') + '<div class="row wrap"><button class="btn sm" type="button" data-hw-edit="' + i + '">Edit</button>' + (h.status === 'Assigned' ? '<button class="btn sm" type="button" data-hw-complete="' + i + '">Mark completed</button>' : '') + '<button class="btn sm danger" type="button" data-hw-delete="' + i + '">Delete</button></div></article>';
+    }).join('') : '<p class="empty">No matching homework yet. Add an assignment above to start your class record.</p>';
+    $('hwAssignments').querySelectorAll('[data-hw-edit]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var h = state.homework[Number(btn.dataset.hwEdit)];
+        editingHomework = Number(btn.dataset.hwEdit);
+        $('hwClass').value = h.className || ''; $('hwSubject').value = h.subject || '';
+        $('hwTitle').value = h.title || ''; $('hwAssigned').value = h.assignedDate || today;
+        $('hwDue').value = h.dueDate || ''; $('hwStatus').value = h.status || 'Assigned';
+        $('hwDetails').value = h.details || ''; $('hwFormHeading').textContent = 'Edit homework';
+        $('hwSave').textContent = 'Update homework'; $('hwCancelEdit').hidden = false;
+        $('hwFormHeading').parentElement.open = true;
+        $('hwClass').focus();
+      });
+    });
+    $('hwAssignments').querySelectorAll('[data-hw-complete]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var h = state.homework[Number(btn.dataset.hwComplete)];
+        h.status = 'Completed'; persist(); renderHomework();
+        status('hwStatusMessage', 'Assignment marked completed.');
+      });
+    });
+    $('hwAssignments').querySelectorAll('[data-hw-delete]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var i = Number(btn.dataset.hwDelete);
+        if (confirm('Delete this homework assignment?')) {
+          state.homework.splice(i, 1); persist(); renderHomework();
+          status('hwStatusMessage', 'Homework deleted.');
+        }
+      });
+    });
+  }
+  $('hwSave').addEventListener('click', function () {
+    var entry = {
+      className: $('hwClass').value.trim(), subject: $('hwSubject').value.trim(),
+      title: $('hwTitle').value.trim(), assignedDate: $('hwAssigned').value,
+      dueDate: $('hwDue').value, status: $('hwStatus').value,
+      details: $('hwDetails').value.trim()
+    };
+    if (!entry.className || !entry.subject || !entry.title || !entry.assignedDate || !entry.dueDate) {
+      status('hwStatusMessage', 'Please fill in class, subject, title, assigned date and due date.', true); return;
+    }
+    if (entry.dueDate < entry.assignedDate && !confirm('The due date is before the assigned date. Save anyway?')) return;
+    if (editingHomework === null) state.homework.unshift(entry);
+    else state.homework[editingHomework] = entry;
+    if (persist()) {
+      renderHomework(); setHomeworkFormDefaults();
+      status('hwStatusMessage', 'Homework saved on this device.');
+    }
+  });
+  $('hwCancelEdit').addEventListener('click', function () {
+    setHomeworkFormDefaults(); status('hwStatusMessage', 'Edit cancelled.');
+  });
+  ['hwFilterClass', 'hwFilterStatus', 'hwSearch'].forEach(function (id) {
+    $(id).addEventListener(id === 'hwFilterClass' || id === 'hwSearch' ? 'input' : 'change', renderHomework);
+  });
+  $('hwExport').addEventListener('click', function () {
+    var rows = [['Class','Subject','Homework title','Instructions','Date assigned','Due date','Status']];
+    state.homework.forEach(function (h) { rows.push([h.className,h.subject,h.title,h.details,h.assignedDate,h.dueDate,h.status]); });
+    download('snapdata-homework.csv', '\ufeff' + csv(rows), 'text/csv;charset=utf-8');
+    status('hwStatusMessage', 'Homework list exported as CSV.');
+  });
+
   $('gridFromTT').addEventListener('click', function () {
     var text = $('ttOutput') ? $('ttOutput').value : '';
     if (!text.trim()) { status('gridStatus', 'No text found in TT Copier yet. Open the TT Copier page and read or paste a timetable first.', true); return; }
@@ -218,10 +324,10 @@
     reader.onload = function () {
       try {
         var backup = JSON.parse(reader.result), data = backup.data || backup;
-        if (!data || !Array.isArray(data.timetable) || !Array.isArray(data.marks) || !Array.isArray(data.logs) || !Array.isArray(data.notes)) throw new Error('Invalid backup');
+        if (!data || !Array.isArray(data.timetable) || !Array.isArray(data.marks) || !Array.isArray(data.logs) || !Array.isArray(data.notes) || (data.homework !== undefined && !Array.isArray(data.homework))) throw new Error('Invalid backup');
         if (!confirm('Importing replaces the current teacher-tool data on this device. Continue?')) return;
-        state = { timetable: data.timetable, marks: data.marks, logs: data.logs, notes: data.notes };
-        persist(); renderGrid(state.timetable); renderMarks(); renderLogs(); renderNotes();
+        state = { timetable: data.timetable, marks: data.marks, logs: data.logs, notes: data.notes, homework: Array.isArray(data.homework) ? data.homework : [] };
+        persist(); renderGrid(state.timetable); renderMarks(); renderLogs(); renderNotes(); renderHomework();
         status('backupStatus', 'Backup imported.');
       } catch (_) { status('backupStatus', 'That file is not a valid SnapData teacher-tool backup.', true); }
     };
@@ -229,8 +335,8 @@
   });
   $('backupClear').addEventListener('click', function () {
     if (!confirm('Delete all timetable, marks, class log and teacher notes saved by these teacher tools on this device? This cannot be undone.')) return;
-    state = { timetable: [], marks: [], logs: [], notes: [] }; localStorage.removeItem(KEY);
-    renderGrid([]); renderMarks(); renderLogs(); renderNotes(); status('backupStatus', 'Teacher-tool data cleared from this browser.');
+    state = { timetable: [], marks: [], logs: [], notes: [], homework: [] }; localStorage.removeItem(KEY);
+    renderGrid([]); renderMarks(); renderLogs(); renderNotes(); renderHomework(); setHomeworkFormDefaults(); status('backupStatus', 'Teacher-tool data cleared from this browser.');
   });
   $('showInstallHelp').addEventListener('click', function () {
     alert(/android/i.test(navigator.userAgent) ? 'Android: open SnapData in Chrome, tap ⋮, then choose Install app or Add to Home screen.' : 'Open your browser menu and choose Install SnapData or Add to Home Screen. Availability depends on your browser.');
@@ -240,5 +346,7 @@
   renderMarks();
   renderLogs();
   renderNotes();
+  setHomeworkFormDefaults();
+  renderHomework();
   showTool('tt-grid');
 })();
