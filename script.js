@@ -12,7 +12,7 @@
   function snapshot(){history.push(JSON.stringify({items:items,table:table}));if(history.length>30)history.shift();$('undo').disabled=false}
   function add(text,o){items.push({id:++uid,text:text,sel:false,o:o==null?uid:o})}
 
-  var pageNames={extract:'Extract from a photo',results:'Review your results',calculate:'Calculate values',export:'Copy and export',summary:'Summarise notes'};
+  var pageNames={extract:'Extract from a photo',results:'Review your results',calculate:'Calculate values',export:'Copy and export',summary:'Summarise notes',timetable:'Timetable Copier'};
   function goPage(name){
     if(!pageNames[name])return;
     document.querySelectorAll('.app-page').forEach(function(p){p.hidden=p.id!=='page-'+name});
