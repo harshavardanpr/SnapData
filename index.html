@@ -9,8 +9,16 @@
 </head>
 <body>
 <header class="top"><h1>SnapData</h1><p>Turn photos into clean, editable data. Your images stay in your browser.</p></header>
+<nav class="page-nav" aria-label="SnapData tools">
+  <button class="page-link active" type="button" data-page="extract"><span class="nav-icon">↥</span><span>Extract</span></button>
+  <button class="page-link" type="button" data-page="results"><span class="nav-icon">☷</span><span>Results</span></button>
+  <button class="page-link" type="button" data-page="calculate"><span class="nav-icon">∑</span><span>Calculate</span></button>
+  <button class="page-link" type="button" data-page="export"><span class="nav-icon">⇧</span><span>Copy &amp; Export</span></button>
+  <button class="page-link" type="button" data-page="summary"><span class="nav-icon">✦</span><span>Summarise</span></button>
+</nav>
 <main>
-<section class="panel"><h2>1. Add and enhance a photo</h2>
+<div class="app-page" id="page-extract">
+<section class="panel"><h2>Extract from a photo</h2>
 <div class="row wrap"><label class="btn primary" for="cam">Take photo</label><label class="btn" for="up">Upload image</label>
 <input id="cam" type="file" accept="image/*" capture="environment" hidden><input id="up" type="file" accept="image/*" hidden></div>
 <div id="previewWrap" class="preview" hidden><img id="preview" alt="Selected image preview"><div id="regionSelectionBox" class="region-selection-box" hidden></div></div>
@@ -28,7 +36,9 @@
 </details>
 <div id="status" class="status" role="status" aria-live="polite"></div><progress id="bar" max="100" value="0" hidden></progress>
 </section>
-<section class="panel"><h2>2. Review and organise</h2>
+</div>
+<div class="app-page" id="page-results" hidden>
+<section class="panel"><h2>Review and organise results</h2>
 <div class="tabs"><button id="listTab" class="tab active">Items</button><button id="tableTab" class="tab">Table</button></div>
 <input id="search" type="search" placeholder="Search items" aria-label="Search items">
 <details class="advanced"><summary>Filter and sort</summary><div class="tools"><label>Show<select id="filter"><option value="all">All items</option><option value="num">Numbers only</option><option value="txt">Text only</option></select></label><label>Sort<select id="sort"><option value="orig">Original order</option><option value="az">A to Z</option><option value="za">Z to A</option><option value="lo">Number low to high</option><option value="hi">Number high to low</option></select></label></div></details>
@@ -38,12 +48,19 @@
 <div class="row wrap"><button id="autoTable" class="btn primary">Auto-detect &amp; build table</button><span class="hint">Looks for repeated columns, separators and field/value pairs after extraction.</span></div>
 <div id="count" class="count">No data yet.</div><ul id="list" class="list"></ul><div id="tableWrap" class="table-wrap" hidden></div><p id="empty" class="empty">Nothing here yet. Add a photo and choose Extract data, or add items by hand.</p>
 </section>
-<section class="panel"><h2>3. Calculate</h2><p class="hint">For item mode, calculations apply to selected numbers. In table mode, use the checkboxes to select cells.</p><div class="calc"><select id="op"><option value="+">Add (+)</option><option value="-">Subtract (−)</option><option value="*">Multiply (×)</option><option value="/">Divide (÷)</option></select><input id="val" type="number" step="any" inputmode="decimal" placeholder="Your value"><button id="applyCalc" class="btn primary">Apply to selected</button></div><div class="sums" id="sums">Select numbers to see their total.</div></section>
-<section class="panel"><h2>4. Copy, share or export</h2><label class="copy-format-label">Text copy format<select id="copyFormat"><option value="smart">Smart text (join wrapped lines)</option><option value="join">Join all lines into paragraphs</option><option value="lines">Keep line breaks</option></select></label><p class="hint">Tables copy as tab-separated rows and columns, ready to paste into Sheets or Excel.</p><div class="action-grid"><button id="copySel" class="btn">Copy selected</button><button id="copyAll" class="btn">Copy all</button><button id="share" class="btn">Share</button><details class="advanced export-options"><summary>Export file…</summary><div class="row wrap"><button id="expTxt" class="btn primary">Export TXT</button><button id="expCsv" class="btn primary">Export CSV</button><button id="expXlsx" class="btn primary">Export XLSX</button></div><p class="hint">XLSX export runs locally in your browser.</p></details></div></section>
-<section class="panel"><h2>5. Summarise notes</h2><p class="hint">Create a short summary, detailed summary or key points from extracted text. Your photo stays in your browser; only the text you choose is sent when you tap Summarise.</p>
+</div>
+<div class="app-page" id="page-calculate" hidden>
+<section class="panel"><h2>Calculate selected values</h2><p class="hint">For item mode, calculations apply to selected numbers. In table mode, use the checkboxes to select cells.</p><div class="calc"><select id="op"><option value="+">Add (+)</option><option value="-">Subtract (−)</option><option value="*">Multiply (×)</option><option value="/">Divide (÷)</option></select><input id="val" type="number" step="any" inputmode="decimal" placeholder="Your value"><button id="applyCalc" class="btn primary">Apply to selected</button></div><div class="sums" id="sums">Select numbers to see their total.</div></section>
+</div>
+<div class="app-page" id="page-export" hidden>
+<section class="panel"><h2>Copy, share or export results</h2><label class="copy-format-label">Text copy format<select id="copyFormat"><option value="smart">Smart text (join wrapped lines)</option><option value="join">Join all lines into paragraphs</option><option value="lines">Keep line breaks</option></select></label><p class="hint">Tables copy as tab-separated rows and columns, ready to paste into Sheets or Excel.</p><div class="action-grid"><button id="copySel" class="btn">Copy selected</button><button id="copyAll" class="btn">Copy all</button><button id="share" class="btn">Share</button><details class="advanced export-options"><summary>Export file…</summary><div class="row wrap"><button id="expTxt" class="btn primary">Export TXT</button><button id="expCsv" class="btn primary">Export CSV</button><button id="expXlsx" class="btn primary">Export XLSX</button></div><p class="hint">XLSX export runs locally in your browser.</p></details></div></section>
+</div>
+<div class="app-page" id="page-summary" hidden>
+<section class="panel"><h2>Summarise notes</h2><p class="hint">Create a short summary, detailed summary or key points from extracted text. Your photo stays in your browser; only the text you choose is sent when you tap Summarise.</p>
 <div class="summary-controls"><label>Summarise<select id="summaryScope"><option value="all">All extracted items</option><option value="selected">Selected items only</option></select></label><label>Style<select id="summaryStyle"><option value="short">Short summary</option><option value="detailed">Detailed summary</option><option value="bullets">Key points</option></select></label></div>
 <div class="row wrap"><button id="summaryBtn" class="btn primary">Summarise with Gemini</button><button id="copySummary" class="btn" disabled>Copy summary</button></div><div id="summaryOutput" class="summary-output" aria-live="polite">Your summary will appear here.</div><p class="hint">Gemini summaries need the separate SnapData summary API on Render and its API key stored as a secret. OCR and exports work without it.</p>
 </section>
+</div>
 </main><div id="toast" class="toast" role="status" aria-live="polite"></div><footer>No accounts. No ads. Photos stay in your browser for OCR and editing. Summary text is sent to Gemini only when you request a summary.</footer>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="script.js"></script>
 </body></html>
