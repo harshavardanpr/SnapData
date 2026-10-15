@@ -162,3 +162,22 @@ footer{max-width:850px;margin:auto;line-height:1.6;padding:20px 18px 28px}
 .question-card textarea{display:block}
 @media(max-width:560px){.tool-switcher{gap:6px}.tool-switcher .tab{padding:8px 10px;font-size:.9rem}.editable-grid td,.editable-grid th{padding:7px;min-width:88px}}
 @media print{body *{visibility:hidden}.teacher-tool:has(#worksheetOutput) #worksheetOutput,.teacher-tool:has(#worksheetOutput) #worksheetOutput *{visibility:visible}.teacher-tool:has(#worksheetOutput) #worksheetOutput{position:absolute;left:0;top:0;width:100%}}
+
+
+/* Teacher homework dashboard */
+.homework-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}
+.homework-stat{display:flex;flex-direction:column;gap:3px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--bg);min-width:0}
+.homework-stat span{font-size:.82rem;color:var(--mute)}
+.homework-stat strong{font-size:clamp(1.4rem,4vw,2rem);line-height:1.2;font-weight:800}
+.homework-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:10px;margin:18px 0 10px}
+.homework-filters label{display:flex;flex-direction:column;gap:5px;font-size:.9rem;color:var(--mute)}
+.homework-filters input,.homework-filters select{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 10px;min-height:42px;width:100%}
+.homework-card{border-radius:14px}
+.homework-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.homework-card-top>div{min-width:0}
+.homework-card-top strong{overflow-wrap:anywhere}
+.homework-status{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;border:1px solid var(--line);border-radius:999px;padding:4px 9px;font-size:.78rem;font-weight:750;background:var(--bg)}
+.homework-status.overdue{border-color:#b42318;color:#b42318;background:color-mix(in srgb,#b42318 8%,var(--card))}
+.homework-status.complete{border-color:#218653;color:#218653;background:color-mix(in srgb,#218653 8%,var(--card))}
+.homework-status.cancelled{color:var(--mute)}
+@media(max-width:420px){.homework-stats{gap:6px}.homework-stat{padding:10px}.homework-stat span{font-size:.75rem}.homework-card-top{flex-direction:column;gap:6px}}
