@@ -181,3 +181,25 @@ footer{max-width:850px;margin:auto;line-height:1.6;padding:20px 18px 28px}
 .homework-status.complete{border-color:#218653;color:#218653;background:color-mix(in srgb,#218653 8%,var(--card))}
 .homework-status.cancelled{color:var(--mute)}
 @media(max-width:420px){.homework-stats{gap:6px}.homework-stat{padding:10px}.homework-stat span{font-size:.75rem}.homework-card-top{flex-direction:column;gap:6px}}
+
+/* Customisable Teacher Dashboard widgets */
+.widget-customiser{border:1px solid var(--line);border-radius:15px;padding:0 13px;margin:14px 0;background:var(--bg)}
+.widget-customiser>summary{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 12px;min-height:50px;cursor:pointer;font-weight:750;list-style-position:inside}
+.widget-customiser>summary .hint{margin:0;font-weight:450}
+.widget-customiser[open]>summary{border-bottom:1px solid var(--line);margin-bottom:10px}
+.widget-choice-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:8px;margin:10px 0}
+.widget-choice{display:flex;align-items:flex-start;gap:10px;padding:11px;border:1px solid var(--line);border-radius:12px;background:var(--card);cursor:pointer;min-width:0}
+.widget-choice input{width:20px;height:20px;flex:0 0 auto;accent-color:var(--brand);margin-top:2px}
+.widget-choice span{display:grid;gap:2px;min-width:0}
+.widget-choice small{color:var(--mute);font-size:.82rem;line-height:1.35}
+.teacher-widget-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start;margin-top:12px}
+.teacher-widget[hidden]{display:none!important}
+.teacher-widget{min-width:0;border:1px solid var(--line);border-radius:16px;background:var(--card);padding:15px;box-shadow:0 3px 14px rgba(20,45,30,.035)}
+.widget-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.widget-heading h3{margin:0;font-size:1.02rem;min-width:0;overflow-wrap:anywhere}
+.widget-actions{display:flex;gap:4px;flex:0 0 auto}
+.widget-actions .btn{min-height:34px;padding:4px 8px}
+.teacher-widget .form-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr))}
+.teacher-widget #ttGrid,.teacher-widget #marksGrid{max-height:48vh}
+.teacher-widget#tool-backup{grid-column:1/-1}
+@media(max-width:700px){.teacher-widget-grid{grid-template-columns:1fr}.teacher-widget#tool-backup{grid-column:auto}.widget-heading{align-items:flex-start}.widget-actions{flex-wrap:wrap;justify-content:flex-end}}

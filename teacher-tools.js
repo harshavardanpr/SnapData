@@ -52,16 +52,97 @@
     return String(text || '').replace(/\r/g, '').split('\n').filter(function (line) { return line.trim() !== ''; })
       .map(function (line) { return line.split('\t'); });
   }
-  function showTool(name) {
-    document.querySelectorAll('.teacher-tool').forEach(function (el) { el.hidden = el.id !== 'tool-' + name; });
-    document.querySelectorAll('[data-tool]').forEach(function (el) {
-      var active = el.getAttribute('data-tool') === name;
-      el.classList.toggle('active', active); el.setAttribute('aria-selected', active ? 'true' : 'false');
+  var WIDGET_KEY = 'snapdata.teacherWidgets.v1';
+  var widgetDefaults = ['homework', 'tt-grid', 'worksheet', 'notes'];
+  var widgetMeta = [
+    { id: 'tt-grid', title: 'Timetable grid', description: 'Edit, import and export a timetable' },
+    { id: 'marks', title: 'Marks', description: 'Enter marks and calculate totals' },
+    { id: 'class-log', title: 'Class log', description: 'Record lessons and homework covered' },
+    { id: 'homework', title: 'Homework dashboard', description: 'Track assignments and due dates' },
+    { id: 'worksheet', title: 'Worksheet organiser', description: 'Split, edit and print questions' },
+    { id: 'notes', title: 'Teacher notes', description: 'Save and organise teaching notes' },
+    { id: 'backup', title: 'Privacy & backup', description: 'Export, import or clear local records' }
+  ];
+  var widgetLayout = { visible: widgetDefaults.slice(), order: widgetMeta.map(function (w) { return w.id; }), collapsed: [] };
+  function readWidgetLayout() {
+    try {
+      var saved = JSON.parse(localStorage.getItem(WIDGET_KEY) || 'null');
+      if (!saved || !Array.isArray(saved.visible) || !Array.isArray(saved.order)) return;
+      widgetLayout.visible = widgetMeta.map(function (w) { return w.id; }).filter(function (id) { return saved.visible.indexOf(id) >= 0; });
+      widgetLayout.order = saved.order.filter(function (id, i, arr) { return widgetMeta.some(function (w) { return w.id === id; }) && arr.indexOf(id) === i; });
+      widgetMeta.forEach(function (w) { if (widgetLayout.order.indexOf(w.id) < 0) widgetLayout.order.push(w.id); });
+      widgetLayout.collapsed = Array.isArray(saved.collapsed) ? saved.collapsed.filter(function (id) { return widgetMeta.some(function (w) { return w.id === id; }); }) : [];
+      if (!widgetLayout.visible.length) widgetLayout.visible = ['homework'];
+    } catch (_) {}
+  }
+  function saveWidgetLayout() {
+    try { localStorage.setItem(WIDGET_KEY, JSON.stringify(widgetLayout)); return true; }
+    catch (_) { status('teacherWidgetStatus', 'Could not save dashboard layout in this browser.', true); return false; }
+  }
+  function widgetElement(id) { return $('tool-' + id); }
+  function applyWidgetLayout() {
+    var grid = $('teacherWidgetGrid');
+    widgetLayout.order.forEach(function (id) { var el = widgetElement(id); if (el) grid.appendChild(el); });
+    widgetMeta.forEach(function (w) {
+      var el = widgetElement(w.id); if (!el) return;
+      el.hidden = widgetLayout.visible.indexOf(w.id) < 0;
+      el.classList.add('teacher-widget'); el.setAttribute('data-widget', w.id);
+      var heading = el.querySelector('h3');
+      if (heading && !heading.parentElement.classList.contains('widget-heading')) {
+        var header = document.createElement('div'); header.className = 'widget-heading';
+        heading.parentNode.insertBefore(header, heading); header.appendChild(heading);
+        var actions = document.createElement('div'); actions.className = 'widget-actions';
+        actions.innerHTML = '<button class="btn sm widget-move-up" type="button" aria-label="Move ' + w.title + ' earlier" title="Move earlier">↑</button><button class="btn sm widget-move-down" type="button" aria-label="Move ' + w.title + ' later" title="Move later">↓</button><button class="btn sm widget-collapse" type="button" aria-expanded="true">Collapse</button>';
+        header.appendChild(actions);
+      }
+      var collapsed = widgetLayout.collapsed.indexOf(w.id) >= 0;
+      Array.from(el.children).filter(function (child) { return !child.classList.contains('widget-heading'); }).forEach(function (child) { child.hidden = collapsed; });
+      var collapse = el.querySelector('.widget-collapse');
+      if (collapse) { collapse.textContent = collapsed ? 'Expand' : 'Collapse'; collapse.setAttribute('aria-expanded', collapsed ? 'false' : 'true'); }
+    });
+    renderWidgetChoices();
+  }
+  function renderWidgetChoices() {
+    var host = $('teacherWidgetChoices'); if (!host) return;
+    host.innerHTML = widgetMeta.map(function (w) {
+      var checked = widgetLayout.visible.indexOf(w.id) >= 0;
+      return '<label class="widget-choice"><input type="checkbox" data-widget-choice="' + w.id + '"' + (checked ? ' checked' : '') + '><span><strong>' + esc(w.title) + '</strong><small>' + esc(w.description) + '</small></span></label>';
+    }).join('');
+    host.querySelectorAll('[data-widget-choice]').forEach(function (input) {
+      input.addEventListener('change', function () {
+        var id = input.getAttribute('data-widget-choice');
+        if (input.checked) { if (widgetLayout.visible.indexOf(id) < 0) widgetLayout.visible.push(id); }
+        else {
+          if (widgetLayout.visible.length <= 1) { input.checked = true; status('teacherWidgetStatus', 'Keep at least one widget on your dashboard.', true); return; }
+          widgetLayout.visible = widgetLayout.visible.filter(function (x) { return x !== id; });
+        }
+        saveWidgetLayout(); applyWidgetLayout(); status('teacherWidgetStatus', 'Dashboard layout saved on this device.');
+      });
     });
   }
-  document.querySelectorAll('[data-tool]').forEach(function (el) {
-    el.addEventListener('click', function () { showTool(el.getAttribute('data-tool')); });
-  });
+  function initWidgetDashboard() {
+    readWidgetLayout(); applyWidgetLayout();
+    $('teacherWidgetGrid').addEventListener('click', function (event) {
+      var btn = event.target.closest('button'); if (!btn) return;
+      var widget = btn.closest('[data-widget]'); if (!widget) return;
+      var id = widget.getAttribute('data-widget');
+      if (btn.classList.contains('widget-collapse')) {
+        if (widgetLayout.collapsed.indexOf(id) >= 0) widgetLayout.collapsed = widgetLayout.collapsed.filter(function (x) { return x !== id; });
+        else widgetLayout.collapsed.push(id);
+        saveWidgetLayout(); applyWidgetLayout();
+      } else if (btn.classList.contains('widget-move-up') || btn.classList.contains('widget-move-down')) {
+        var at = widgetLayout.order.indexOf(id), next = at + (btn.classList.contains('widget-move-up') ? -1 : 1);
+        if (at < 0 || next < 0 || next >= widgetLayout.order.length) return;
+        var temp = widgetLayout.order[at]; widgetLayout.order[at] = widgetLayout.order[next]; widgetLayout.order[next] = temp;
+        saveWidgetLayout(); applyWidgetLayout();
+      }
+    });
+    $('resetTeacherWidgets').addEventListener('click', function () {
+      widgetLayout = { visible: widgetDefaults.slice(), order: widgetMeta.map(function (w) { return w.id; }), collapsed: [] };
+      saveWidgetLayout(); applyWidgetLayout();
+      status('teacherWidgetStatus', 'Dashboard layout reset. Your saved teacher records were not changed.');
+    });
+  }
   function renderGrid(rows) {
     var host = $('ttGrid');
     if (!rows.length) rows = [['Day', 'Period 1', 'Period 2', 'Period 3', 'Period 4', 'Period 5'], ['Monday', '', '', '', '', ''], ['Tuesday', '', '', '', '', ''], ['Wednesday', '', '', '', '', ''], ['Thursday', '', '', '', '', ''], ['Friday', '', '', '', '', '']];
@@ -348,5 +429,5 @@
   renderNotes();
   setHomeworkFormDefaults();
   renderHomework();
-  showTool('tt-grid');
+  initWidgetDashboard();
 })();

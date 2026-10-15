@@ -80,9 +80,14 @@
 </div>
 <div class="app-page" id="page-teacher-tools" hidden>
 <section class="panel"><h2>Teacher workspace</h2><p class="hint">Local-first tools for classroom work. Your entries are saved on this device until you export or clear them.</p>
-<div class="tool-switcher" role="tablist" aria-label="Teacher tools">
-<button class="tab active" type="button" data-tool="tt-grid">Timetable grid</button><button class="tab" type="button" data-tool="marks">Marks</button><button class="tab" type="button" data-tool="class-log">Class log</button><button class="tab" type="button" data-tool="homework">Homework dashboard</button><button class="tab" type="button" data-tool="class-overview">Class overview</button><button class="tab" type="button" data-tool="announcements">Announcements</button><button class="tab" type="button" data-tool="worksheet">Worksheet</button><button class="tab" type="button" data-tool="notes">Teacher notes</button><button class="tab" type="button" data-tool="backup">Privacy &amp; backup</button>
-</div>
+<details class="widget-customiser" id="teacherWidgetCustomiser">
+<summary><span>Customise dashboard</span><span class="hint">Choose tools, then arrange your workspace</span></summary>
+<p class="hint">Show only the tools you need. Your layout is saved in this browser and does not affect your saved teacher data.</p>
+<div id="teacherWidgetChoices" class="widget-choice-grid"></div>
+<div class="row wrap"><button class="btn" id="resetTeacherWidgets" type="button">Reset dashboard layout</button></div>
+</details>
+<p id="teacherWidgetStatus" class="status" role="status" aria-live="polite"></p>
+<div id="teacherWidgetGrid" class="teacher-widget-grid">
 <div class="teacher-tool" id="tool-tt-grid">
 <h3>Editable timetable grid</h3><p class="hint">Paste tab-separated timetable text from TT Copier, or start with a blank grid. Edit cells directly, then save or export.</p>
 <div class="row wrap"><button class="btn" type="button" id="gridFromTT">Import from TT Copier</button><button class="btn" type="button" id="gridBlank">Blank timetable</button><button class="btn primary" type="button" id="gridAddRow">Add row</button><button class="btn" type="button" id="gridAddCol">Add column</button><button class="btn" type="button" id="gridSave">Save on this device</button><button class="btn" type="button" id="gridCsv">Export CSV</button><button class="btn" type="button" id="gridCopy">Copy TSV</button></div>
@@ -125,24 +130,6 @@
 </div>
 <div id="hwAssignments" class="saved-list"></div>
 </div>
-<div class="teacher-tool" id="tool-class-overview" hidden>
-<h3>Class overview</h3>
-<p class="hint">A quick class-by-class view inspired by EduConnect: see what's coming up, what's overdue and what's completed. Choose a class to focus the timeline.</p>
-<div class="form-grid"><label for="overviewClass">Choose class / section<select id="overviewClass"><option value="all">All classes</option></select></label><label for="overviewRange">Timeline view<select id="overviewRange"><option value="all">All homework</option><option value="upcoming">Upcoming</option><option value="overdue">Overdue</option><option value="completed">Completed</option></select></label></div>
-<div class="homework-stats"><article class="homework-stat"><span>Upcoming</span><strong id="overviewUpcoming">0</strong></article><article class="homework-stat"><span>Overdue</span><strong id="overviewOverdue">0</strong></article><article class="homework-stat"><span>Completed</span><strong id="overviewCompleted">0</strong></article></div>
-<div id="overviewTimeline" class="saved-list"></div>
-</div>
-<div class="teacher-tool" id="tool-announcements" hidden>
-<h3>Class announcements</h3>
-<p class="hint">Create notices for a class, such as a test reminder, event, material to bring or timetable change. These are currently stored on this device and are not sent to students or parents.</p>
-<details class="advanced" open><summary id="announcementFormHeading">Create announcement</summary>
-<div class="form-grid"><label>Class / section<input id="announcementClass" placeholder="e.g. Grade 7B" required></label><label>Title<input id="announcementTitle" placeholder="e.g. Science test on Friday" required></label><label>Date<input id="announcementDate" type="date" required></label><label>Priority<select id="announcementPriority"><option value="Normal">Normal</option><option value="Important">Important</option><option value="Urgent">Urgent</option></select></label></div>
-<label for="announcementBody">Announcement details</label><textarea id="announcementBody" rows="3" placeholder="What should the class know?"></textarea>
-<div class="row wrap"><button class="btn primary" id="announcementSave" type="button">Post announcement</button><button class="btn" id="announcementCancel" type="button" hidden>Cancel edit</button></div><p id="announcementStatus" class="status" role="status" aria-live="polite"></p>
-</details>
-<div class="homework-filters"><label>Filter class<input id="announcementFilterClass" placeholder="All classes"></label><label>Search notices<input id="announcementSearch" placeholder="Search announcements"></label></div>
-<div id="announcementList" class="saved-list"></div>
-</div>
 <div class="teacher-tool" id="tool-worksheet" hidden>
 <h3>Worksheet question organiser</h3><p class="hint">Paste OCR output or type questions. The tool splits numbered questions into editable entries. Review the text before printing or copying.</p><textarea id="worksheetInput" rows="9" placeholder="1. First question&#10;2. Second question"></textarea><div class="row wrap"><button class="btn primary" id="worksheetSplit" type="button">Organise questions</button><button class="btn" id="worksheetCopy" type="button">Copy organised text</button><button class="btn" id="worksheetPrint" type="button">Print worksheet</button></div><div id="worksheetOutput" class="saved-list"></div>
 </div>
@@ -152,6 +139,7 @@
 <div class="teacher-tool" id="tool-backup" hidden>
 <h3>Privacy, backup &amp; install</h3><p>SnapData stores these teacher-tool entries in this browser on this device. They are not uploaded to a server. Anyone who can use this browser profile may be able to access them, so avoid storing sensitive student information on shared devices.</p>
 <div class="row wrap"><button class="btn primary" id="backupExport" type="button">Export teacher-tool backup</button><label class="btn" for="backupImport">Import backup</label><input id="backupImport" type="file" accept="application/json,.json" hidden><button class="btn danger" id="backupClear" type="button">Clear teacher-tool data</button><button class="btn" id="showInstallHelp" type="button">How to install SnapData</button></div><p class="hint">Offline app shell can open without internet after caching, but OCR libraries, AI summaries and some exports may need a connection. Do not include sensitive records in a backup unless you can store it securely.</p><p id="backupStatus" class="status" role="status" aria-live="polite"></p>
+</div>
 </div>
 </section></div>
 </main><div id="toast" class="toast" role="status" aria-live="polite"></div><footer>No accounts. No ads. Photos stay in your browser for OCR and editing. Summary text is sent to Gemini only when you request a summary.</footer>
