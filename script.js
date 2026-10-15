@@ -394,6 +394,37 @@
   $('expTxt').onclick = function () { exportData('txt'); };
   $('expCsv').onclick = function () { exportData('csv'); };
   $('expXlsx').onclick=function(){exportData('xlsx')};
+  function saveCurrentExport(kind) {
+    if (!window.SnapDataFileLibrary) { toast('Files library is unavailable'); return; }
+    var selected = pick(false), name = 'snapdata-' + new Date().toISOString().slice(0,10), blob;
+    if (kind === 'xlsx') {
+      if (typeof XLSX === 'undefined') { toast('XLSX library not loaded'); return; }
+      buildTable();
+      var ws = XLSX.utils.aoa_to_sheet(table), wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'SnapData');
+      blob = new Blob([XLSX.write(wb, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      name += '.xlsx';
+    } else {
+      if (!selected.length) { toast('Nothing to save'); return; }
+      if (kind === 'txt') {
+        blob = new Blob([selected.map(function (item) { return item.text; }).join('\n')], { type: 'text/plain;charset=utf-8' });
+        name += '.txt';
+      } else {
+        var rows = selected.map(function (item) {
+          var cells = item.text.split(/\t|\||\s{2,}/).map(function (cell) { return cell.trim(); }).filter(Boolean);
+          return (cells.length ? cells : [item.text]).map(csvCell).join(',');
+        });
+        blob = new Blob(['\ufeff' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+        name += '.csv';
+      }
+    }
+    var tag = $('libraryDefaultTag') ? $('libraryDefaultTag').value : 'Unsorted';
+    window.SnapDataFileLibrary.save(name, blob, tag).then(function () { toast('Saved to Teacher Files'); }).catch(function () { toast('Could not save. Browser storage may be full.'); });
+  }
+  $('saveTxtToFiles').onclick = function () { saveCurrentExport('txt'); };
+  $('saveCsvToFiles').onclick = function () { saveCurrentExport('csv'); };
+  $('saveXlsxToFiles').onclick = function () { saveCurrentExport('xlsx'); };
+
   $('share').onclick=function(){var text=items.map(function(i){return i.text}).join('\n');if(navigator.share)navigator.share({title:'SnapData result',text:text}).catch(function(){});else copy(false)};
   $('listTab').onclick=function(){mode='list';$('listTab').classList.add('active');$('tableTab').classList.remove('active');$('list').hidden=false;$('tableWrap').hidden=true;$('itemActions').hidden=false;$('moreItemTools').hidden=false};
   $('tableTab').onclick=function(){mode='table';buildTable();$('tableTab').classList.add('active');$('listTab').classList.remove('active');$('list').hidden=true;$('tableWrap').hidden=false;$('itemActions').hidden=true;$('moreItemTools').hidden=true;renderTable()};

@@ -53,9 +53,10 @@
       .map(function (line) { return line.split('\t'); });
   }
   var WIDGET_KEY = 'snapdata.teacherWidgets.v1';
-  var widgetDefaults = ['homework', 'tt-grid', 'worksheet', 'notes'];
+  var widgetDefaults = ['homework', 'tt-grid', 'files', 'worksheet', 'notes'];
   var widgetMeta = [
     { id: 'tt-grid', title: 'Timetable grid', description: 'Edit, import and export a timetable' },
+    { id: 'files', title: 'Files library', description: 'Store, tag and download files on this device' },
     { id: 'marks', title: 'Marks', description: 'Enter marks and calculate totals' },
     { id: 'class-log', title: 'Class log', description: 'Record lessons and homework covered' },
     { id: 'homework', title: 'Homework dashboard', description: 'Track assignments and due dates' },
@@ -92,7 +93,7 @@
         var header = document.createElement('div'); header.className = 'widget-heading';
         heading.parentNode.insertBefore(header, heading); header.appendChild(heading);
         var actions = document.createElement('div'); actions.className = 'widget-actions';
-        actions.innerHTML = '<button class="btn sm widget-move-up" type="button" aria-label="Move ' + w.title + ' earlier" title="Move earlier">↑</button><button class="btn sm widget-move-down" type="button" aria-label="Move ' + w.title + ' later" title="Move later">↓</button><button class="btn sm widget-collapse" type="button" aria-expanded="true">Collapse</button>';
+        actions.innerHTML = '<button class="btn sm widget-drag-handle" type="button" aria-label="Drag to rearrange ' + w.title + '" title="Drag to rearrange">⠿</button><button class="btn sm widget-move-up" type="button" aria-label="Move ' + w.title + ' earlier" title="Move earlier">↑</button><button class="btn sm widget-move-down" type="button" aria-label="Move ' + w.title + ' later" title="Move later">↓</button><button class="btn sm widget-collapse" type="button" aria-expanded="true">Collapse</button>';
         header.appendChild(actions);
       }
       var collapsed = widgetLayout.collapsed.indexOf(w.id) >= 0;
@@ -137,6 +138,43 @@
         saveWidgetLayout(); applyWidgetLayout();
       }
     });
+    var dragState = null;
+    $('teacherWidgetGrid').addEventListener('pointerdown', function (event) {
+      var handle = event.target.closest('.widget-drag-handle');
+      if (!handle || event.button > 0) return;
+      var card = handle.closest('[data-widget]');
+      if (!card || card.hidden) return;
+      dragState = { card: card, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, moved: false };
+      handle.setPointerCapture && handle.setPointerCapture(event.pointerId);
+      card.classList.add('widget-dragging');
+      event.preventDefault();
+    });
+    document.addEventListener('pointermove', function (event) {
+      if (!dragState || event.pointerId !== dragState.pointerId) return;
+      if (Math.abs(event.clientX - dragState.startX) + Math.abs(event.clientY - dragState.startY) > 5) dragState.moved = true;
+      if (!dragState.moved) return;
+      var target = document.elementFromPoint(event.clientX, event.clientY);
+      var other = target && target.closest ? target.closest('#teacherWidgetGrid [data-widget]') : null;
+      if (!other || other === dragState.card || other.hidden) return;
+      var rect = other.getBoundingClientRect();
+      var before = event.clientY < rect.top + rect.height / 2;
+      if (before) other.parentNode.insertBefore(dragState.card, other);
+      else other.parentNode.insertBefore(dragState.card, other.nextSibling);
+    }, { passive: false });
+    function finishWidgetDrag(event) {
+      if (!dragState || (event && event.pointerId !== dragState.pointerId)) return;
+      var moved = dragState.moved;
+      dragState.card.classList.remove('widget-dragging');
+      dragState = null;
+      if (moved) {
+        widgetLayout.order = Array.from($('teacherWidgetGrid').querySelectorAll('[data-widget]')).map(function (el) { return el.getAttribute('data-widget'); });
+        saveWidgetLayout();
+        status('teacherWidgetStatus', 'Dashboard layout saved. Your widget order is remembered on this device.');
+      }
+    }
+    document.addEventListener('pointerup', finishWidgetDrag);
+    document.addEventListener('pointercancel', finishWidgetDrag);
+    if (window.SnapDataFileLibrary) window.SnapDataFileLibrary.initTeacherWidget();
     $('resetTeacherWidgets').addEventListener('click', function () {
       widgetLayout = { visible: widgetDefaults.slice(), order: widgetMeta.map(function (w) { return w.id; }), collapsed: [] };
       saveWidgetLayout(); applyWidgetLayout();

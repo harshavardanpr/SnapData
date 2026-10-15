@@ -1,5 +1,5 @@
 'use strict';
-var CACHE_NAME = 'snapdata-shell-v4';
+var CACHE_NAME = 'snapdata-shell-v5';
 var APP_SHELL = [
   './',
   './index.html',
@@ -8,6 +8,7 @@ var APP_SHELL = [
   './pwa.js',
   './timetable.js',
   './teacher-tools.js',
+  './file-library.js',
   './manifest.json',
   './icon.svg'
 ];
