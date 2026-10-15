@@ -1,5 +1,5 @@
 'use strict';
-var CACHE_NAME = 'snapdata-shell-v2';
+var CACHE_NAME = 'snapdata-shell-v3';
 var APP_SHELL = [
   './',
   './index.html',
