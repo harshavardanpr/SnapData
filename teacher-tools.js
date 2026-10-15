@@ -391,14 +391,14 @@
   });
   $('marksCopy').addEventListener('click', function () {
     readMarks(); var rows = [['Learner name', 'Maths /100', 'Science /100', 'English /100', 'Total /300', 'Percentage']];
-    state.marks.forEach(function (r) { var vals = [r.maths, r.science, r.english].map(Number); var total = vals.reduce(function (a,b) { return a+b; },0); rows.push([r.name,r.maths,r.science,r.english,total,(total/300*100).toFixed(2)+'%']); });
+    state.marks.forEach(function (r) { var raw = [r.maths, r.science, r.english]; var complete = raw.every(function (v) { return String(v == null ? '' : v).trim() !== '' && isFinite(Number(v)); }); var vals = raw.map(Number); var total = complete ? vals.reduce(function (a,b) { return a+b; },0) : ''; var percentage = complete ? (total/300*100).toFixed(2)+'%' : ''; rows.push([r.name,r.maths,r.science,r.english,total,percentage]); });
     copy(rows.map(function (r) { return r.join('\t'); }).join('\n'), function (ok) { status('marksStatus', ok ? 'Marks table copied.' : 'Copy failed; use Export CSV.', !ok); });
   });
-  $('logDate').value = new Date().toISOString().slice(0, 10);
+  $('logDate').value = todayISO();
   $('logSave').addEventListener('click', function () {
     var log = { date: $('logDate').value, className: $('logClass').value.trim(), subject: $('logSubject').value.trim(), lesson: $('logLesson').value.trim(), homework: $('logHomework').value.trim(), notes: $('logNotes').value.trim() };
-    if (!log.date || !log.className || !log.subject || !log.lesson) { status('backupStatus', ''); alert('Please enter the date, class, subject and lesson covered.'); return; }
-    state.logs.unshift(log); if (persist()) { renderLogs(); ['logClass','logSubject','logLesson','logHomework','logNotes'].forEach(function (id) { $(id).value = ''; }); }
+    if (!log.date || !log.className || !log.subject || !log.lesson) { status('logStatus', 'Please enter the date, class, subject and lesson covered.', true); return; }
+    state.logs.unshift(log); if (persist()) { renderLogs(); status('logStatus', 'Class log entry saved.'); ['logClass','logSubject','logLesson','logHomework','logNotes'].forEach(function (id) { $(id).value = ''; }); } else { state.logs.shift(); }
   });
   $('logExport').addEventListener('click', function () {
     download('snapdata-class-log.csv', '\ufeff' + csv([['Date','Class','Subject','Lesson','Homework','Notes']].concat(state.logs.map(function (l) { return [l.date,l.className,l.subject,l.lesson,l.homework,l.notes]; }))), 'text/csv;charset=utf-8');
