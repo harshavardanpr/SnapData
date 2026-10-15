@@ -133,3 +133,8 @@ footer{max-width:850px;margin:auto;line-height:1.6;padding:20px 18px 28px}
 .install-btn{flex:0 0 auto;background:#fff;color:#176b4b;border-color:rgba(255,255,255,.6);box-shadow:0 4px 16px rgba(0,0,0,.12)}
 .install-btn:hover{background:#f0fff6;border-color:#fff}
 @media(max-width:480px){.top-heading{align-items:flex-start;flex-direction:column;gap:12px}.install-btn{min-height:40px}}
+
+/* Timetable copier */
+#ttOutput{display:block;width:100%;min-height:220px;resize:vertical;font: .94rem/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre;tab-size:4}
+#ttOutputWrap>label{display:block;font-weight:700;margin:10px 0 6px}
+#ttOutputWrap .hint{font-weight:400}
