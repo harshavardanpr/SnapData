@@ -24,18 +24,68 @@
   function clearImage(){file=null;sourceImg=null;$('preview').removeAttribute('src');$('previewWrap').hidden=true;$('editor').hidden=true;$('extractBtn').disabled=true;$('clearImg').disabled=true;$('bar').hidden=true;setStatus('')}
 
   function prepare(f) {
-    var c=renderCanvas();if(!c)return Promise.resolve(f);var max=2200,scale=Math.min(1,max/Math.max(c.width,c.height)),o=document.createElement('canvas');o.width=Math.round(c.width*scale);o.height=Math.round(c.height*scale);var x=o.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,o.width,o.height);x.drawImage(c,0,0,o.width,o.height);return new Promise(function(res){o.toBlob(function(b){res(b||f)},'image/png')});
+    // Preserve original pixel dimensions: downscaling here loses small handwriting.
+    // Large images are tiled after loading instead of shrinking the whole page first.
+    var c=renderCanvas();if(!c)return Promise.resolve(f);
+    var o=document.createElement('canvas');o.width=c.width;o.height=c.height;
+    var x=o.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,o.width,o.height);x.drawImage(c,0,0);
+    return new Promise(function(res){o.toBlob(function(b){res(b||f)},'image/png')});
+  }
+  function autoEnhanceCanvas(c){
+    // Local-only enhancement candidate: greyscale plus gentle percentile contrast stretch.
+    // We compare OCR confidence with the original and keep whichever reads better.
+    var src=c.getContext('2d').getImageData(0,0,c.width,c.height),d=src.data,hist=new Uint32Array(256),gray=new Uint8Array(c.width*c.height);
+    for(var i=0,p=0;i<d.length;i+=4,p++){var g=Math.round(.299*d[i]+.587*d[i+1]+.114*d[i+2]);gray[p]=g;hist[g]++}
+    var total=gray.length,lowTarget=total*.02,highTarget=total*.98,acc=0,lo=0,hi=255;
+    for(var a=0;a<256;a++){acc+=hist[a];if(acc>=lowTarget){lo=a;break}}
+    acc=0;for(var b=0;b<256;b++){acc+=hist[b];if(acc>=highTarget){hi=b;break}}
+    if(hi-lo<32){lo=Math.max(0,lo-12);hi=Math.min(255,hi+12)}
+    var out=document.createElement('canvas');out.width=c.width;out.height=c.height;var ox=out.getContext('2d'),od=ox.createImageData(c.width,c.height),span=Math.max(1,hi-lo);
+    for(var j=0,k=0;j<gray.length;j++,k+=4){var v=Math.max(0,Math.min(255,Math.round((gray[j]-lo)*255/span)));od.data[k]=od.data[k+1]=od.data[k+2]=v;od.data[k+3]=255}
+    ox.putImageData(od,0,0);return out;
   }
   function tileCanvases(c){var max=2200,over=.12;if(Math.max(c.width,c.height)<=max)return [c];var long=Math.max(c.width,c.height),n=Math.ceil(long/(max*(1-over))),out=[],vertical=c.height>c.width,step=(vertical?c.height:c.width)/n;for(var i=0;i<n;i++){var st=Math.max(0,Math.round(i*step-step*over)),en=Math.min(vertical?c.height:c.width,Math.round((i+1)*step+step*over)),tw=vertical?c.width:en-st,th=vertical?en-st:c.height,t=document.createElement('canvas');t.width=tw;t.height=th;t.getContext('2d').drawImage(c,vertical?0:st,vertical?st:0,tw,th,0,0,tw,th);out.push(t)}return out}
   function rowsFromWords(words){var rows=[];words.forEach(function(w){var t=(w.text||'').trim();if(!t)return;var cy=(w.bbox.y0+w.bbox.y1)/2,row=null;for(var i=0;i<rows.length;i++)if(Math.abs(cy-rows[i].cy)<Math.max(12,(w.bbox.y1-w.bbox.y0)*.65)){row=rows[i];break}if(!row){row={cy:cy,words:[]};rows.push(row)}row.words.push(w)});rows.sort(function(a,b){return a.cy-b.cy});return rows.map(function(row){row.words.sort(function(a,b){return a.bbox.x0-b.bbox.x0});var out='',last=null;row.words.forEach(function(w){if(last!==null&&w.bbox.x0-last>Math.max(18,(w.bbox.y1-w.bbox.y0)*1.5))out+='\t';else if(out)out+=' ';out+=(w.text||'').trim();last=w.bbox.x1});return out.trim()}).filter(Boolean)}
+  function cloudOcr(canvas){
+    return new Promise(function(resolve,reject){
+      try{
+        var max=2400,w=canvas.width,h=canvas.height,scale=Math.min(1,max/Math.max(w,h));
+        var sendCanvas=document.createElement('canvas');sendCanvas.width=Math.max(1,Math.round(w*scale));sendCanvas.height=Math.max(1,Math.round(h*scale));
+        sendCanvas.getContext('2d').drawImage(canvas,0,0,sendCanvas.width,sendCanvas.height);
+        var dataUrl=sendCanvas.toDataURL('image/jpeg',0.84);
+        fetch('https://snapdata-api.onrender.com/api/ocr',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:dataUrl,mode:$('ocrMode').value})})
+          .then(function(r){return r.json().then(function(data){if(!r.ok)throw new Error(data.error||'Cloud OCR unavailable');return data})})
+          .then(function(data){if(!data.text)reject(new Error('No text returned'));else resolve(data.text)})
+          .catch(reject);
+      }catch(e){reject(e)}
+    });
+  }
+
   function extract(){
     if(!file||busy)return;if(typeof Tesseract==='undefined'){setStatus('OCR library failed to load. Check your internet connection and reload.',true);return}
     busy=true;$('extractBtn').disabled=true;var bar=$('bar');bar.hidden=false;bar.value=0;setStatus('Preparing image…');
-    var modeChoice=$('ocrMode').value,quality=$('quality').value,kind=modeChoice==='auto'?'table':modeChoice;
+    var modeChoice=$('ocrMode').value,quality=$('quality').value,kind=modeChoice;
     prepare(file).then(function(base){var canvas=document.createElement('canvas'),im=new Image();im.src=URL.createObjectURL(base);return new Promise(function(resolve){im.onload=function(){canvas.width=im.width;canvas.height=im.height;canvas.getContext('2d').drawImage(im,0,0);resolve(canvas)}})}).then(function(c){
-      var tiles=quality==='high'?tileCanvases(c):[c],results=[],idx=0;
-      function next(){if(idx>=tiles.length){finish();return}setStatus('Reading section '+(idx+1)+' of '+tiles.length+'…');var cfg={logger:function(m){if(m.status==='recognizing text'){bar.value=Math.round(((idx+m.progress)/tiles.length)*100);setStatus('Reading text… '+bar.value+'%')}}};if(kind==='numbers')cfg.config={tessedit_char_whitelist:'0123456789.,%$€£¥₹-+()'};Tesseract.recognize(tiles[idx],'eng',cfg).then(function(r){results.push(r);idx++;next()}).catch(function(){if(idx===0&&tiles.length>1){tiles=[c];idx=0;results=[];setStatus('Trying OCR fallback…');next()}else{setStatus('OCR failed.',true);done()}})}
-      function finish(){var lines=[];results.forEach(function(r){var got=(kind==='table'&&r.data.words)?rowsFromWords(r.data.words):(r.data.text||'').split(/\r?\n/).map(function(x){return x.trim()}).filter(Boolean);lines=lines.concat(got)});lines=lines.filter(function(x,i,a){return x&&a.indexOf(x)===i});if(!lines.length){setStatus('No text found. Try a sharper, well-lit photo.',true);done();return}snapshot();lines.forEach(function(l){add(l)});if(lines.some(function(l){return l.indexOf('\t')>=0}))table=lines.map(function(l){return l.split('\t')});setStatus('Found '+lines.length+' lines. Edit, organise or export below.');render();done()}
+      var needsTiles=Math.max(c.width,c.height)>2400;var useTiles=quality==='high'||(quality==='auto'&&needsTiles);var tiles=useTiles?tileCanvases(c):[c];var enhancedTiles=[];if(kind==='auto'&&quality==='auto'){var enhancedCanvas=autoEnhanceCanvas(c);enhancedTiles=useTiles?tileCanvases(enhancedCanvas):[enhancedCanvas]}var results=[],idx=0;
+      function next(){if(idx>=tiles.length){finish();return}setStatus('Reading section '+(idx+1)+' of '+tiles.length+'…');var cfg={logger:function(m){if(m.status==='recognizing text'){bar.value=Math.round(((idx+m.progress)/tiles.length)*100);setStatus('Reading text… '+bar.value+'%')}}};if(kind==='numbers')cfg.config={tessedit_char_whitelist:'0123456789.,%$€£¥₹-+()'};Tesseract.recognize(tiles[idx],'eng',cfg).then(function(r){if(enhancedTiles.length){setStatus('Comparing original and enhanced text…');return Tesseract.recognize(enhancedTiles[idx],'eng',cfg).then(function(er){results.push((er.data.confidence||0)>(r.data.confidence||0)?er:r)}).catch(function(){results.push(r)})}results.push(r)}).then(function(){idx++;next()}).catch(function(){if(idx===0&&tiles.length>1){tiles=[c];idx=0;results=[];setStatus('Trying OCR fallback…');next()}else if($('cloudOcrConsent')&&$('cloudOcrConsent').checked){setStatus('Local OCR failed. Trying the optional Gemini fallback…');cloudOcr(c).then(function(text){var cloudLines=text.split(/\r?\n/).map(function(x){return x.trim()}).filter(Boolean);if(!cloudLines.length)throw new Error('No text returned');snapshot();cloudLines.forEach(function(l){add(l)});if(cloudLines.some(function(l){return l.indexOf('\t')>=0}))table=cloudLines.map(function(l){return l.split('\t')});setStatus('Found '+cloudLines.length+' lines using Gemini fallback. Check names and numbers before exporting.');render();done()}).catch(function(){setStatus('Both local and cloud OCR failed. Try a clearer photo or crop.',true);done()})}else{setStatus('OCR failed.',true);done()}})}
+      function finish(){
+        var lines=[];results.forEach(function(r){var textLines=(r.data.text||'').split(/\r?\n/).map(function(x){return x.trim()}).filter(Boolean);var got=textLines;if((kind==='table'||kind==='auto')&&r.data.words){var rowLines=rowsFromWords(r.data.words);if(kind==='table'){got=rowLines}else if(kind==='auto'){var tabbed=rowLines.filter(function(x){return x.indexOf('\t')>=0});var consistent=tabbed.length>=2&&tabbed.filter(function(x){return x.split('\t').length>=2}).length>=Math.ceil(tabbed.length*.65);got=consistent?rowLines:textLines}}lines=lines.concat(got)});
+        lines=lines.filter(function(x,i,a){return x&&a.indexOf(x)===i});
+        var confidence=results.length?results.reduce(function(sum,r){return sum+(Number(r.data.confidence)||0)},0)/results.length:0;
+        function applyLines(finalLines,source){
+          finalLines=finalLines.map(function(x){return String(x).trim()}).filter(function(x){return x});
+          finalLines=finalLines.filter(function(x,i,a){return a.indexOf(x)===i});
+          if(!finalLines.length){setStatus('No text found. Try a sharper, well-lit photo.',true);done();return}
+          snapshot();finalLines.forEach(function(l){add(l)});if(finalLines.some(function(l){return l.indexOf('\t')>=0}))table=finalLines.map(function(l){return l.split('\t')});
+          setStatus('Found '+finalLines.length+' lines'+(source==='cloud'?' using Gemini fallback':'')+'. Check names and numbers before exporting.');render();done();
+        }
+        if($('cloudOcrConsent')&&$('cloudOcrConsent').checked&&(confidence<70||!lines.length)){
+          setStatus('Local OCR confidence is low. Trying the optional Gemini fallback…');
+          cloudOcr(c).then(function(text){if(!text)throw new Error('No text returned');applyLines(text.split(/\r?\n/).map(function(x){return x.trim()}).filter(Boolean),'cloud')}).catch(function(){setStatus('Cloud OCR was unavailable. Keeping the local result; check it carefully.',true);applyLines(lines,'local')});
+          return;
+        }
+        applyLines(lines,'local');
+      }
       function done(){busy=false;$('extractBtn').disabled=!file;bar.hidden=true}next();
     }).catch(function(e){setStatus('Could not read the image: '+(e.message||'unknown error'),true);busy=false;$('extractBtn').disabled=!file;bar.hidden=true});
   }
@@ -135,7 +185,11 @@
   }
   function undo() {
     if (!history.length) return;
-    items = JSON.parse(history.pop()); $('undo').disabled = !history.length; render();
+    var previous = JSON.parse(history.pop());
+    items = Array.isArray(previous) ? previous : (previous.items || []);
+    if (!Array.isArray(previous)) table = Array.isArray(previous.table) ? previous.table : [];
+    $('undo').disabled = !history.length;
+    if (mode === 'table') renderTable(); else render();
   }
 
   /* ---------- calculate ---------- */
@@ -193,7 +247,31 @@
     toast('Exported ' + list.length + ' items');
   }
 
+  /* ---------- Gemini summaries ---------- */
+  function summarySource(){
+    var selected=items.filter(function(i){return i.sel;});
+    var chosen=$('summaryScope').value==='selected'?selected:items;
+    return chosen.map(function(i){return i.text;}).join('\n').trim();
+  }
+  function summarize(){
+    var source=summarySource();
+    if(!source){toast($('summaryScope').value==='selected'?'Select items first':'Extract some notes first');return}
+    if(source.length>40000){toast('Please summarise up to 40,000 characters at a time');return}
+    var button=$('summaryBtn'),out=$('summaryOutput');button.disabled=true;out.textContent='Creating summary…';
+    fetch('https://snapdata-api.onrender.com/api/summarize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:source,style:$('summaryStyle').value})})
+      .then(function(r){return r.json().then(function(data){if(!r.ok)throw new Error(data.error||'Summary service unavailable');return data})})
+      .then(function(data){out.textContent=data.summary||'No summary was returned.';$('copySummary').disabled=!data.summary;toast('Summary ready')})
+      .catch(function(e){out.textContent='Summary could not be created. The summary API must be deployed and configured on Render. Your extracted notes are still here. ('+e.message+')';$('copySummary').disabled=true})
+      .finally(function(){button.disabled=false});
+  }
+  function copySummary(){
+    var text=$('summaryOutput').textContent;if(!text||text==='Your summary will appear here.'||text==='Creating summary…')return;
+    if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(text).then(function(){toast('Summary copied')},function(){toast('Copy failed')});
+    else{var ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('Summary copied')}catch(e){toast('Copy failed')}ta.remove()}
+  }
+
   /* ---------- wire up ---------- */
+  $('summaryBtn').onclick=summarize;$('copySummary').onclick=copySummary;
   $('cam').onchange = onFile; $('up').onchange = onFile;
   $('saveEnhanced').onclick=saveEnhanced;$('resetEdit').onclick=resetEdit;$('rotL').onclick=function(){edit.rotation-=90;drawPreview()};$('rotR').onclick=function(){edit.rotation+=90;drawPreview()};
   ['zoom','brightness','contrast','sharpen'].forEach(function(id){$(id).oninput=function(){edit[id]=id==='zoom'?+this.value/100:+this.value;drawPreview()}});
