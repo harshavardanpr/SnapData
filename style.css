@@ -203,3 +203,21 @@ footer{max-width:850px;margin:auto;line-height:1.6;padding:20px 18px 28px}
 .teacher-widget #ttGrid,.teacher-widget #marksGrid{max-height:48vh}
 .teacher-widget#tool-backup{grid-column:1/-1}
 @media(max-width:700px){.teacher-widget-grid{grid-template-columns:1fr}.teacher-widget#tool-backup{grid-column:auto}.widget-heading{align-items:flex-start}.widget-actions{flex-wrap:wrap;justify-content:flex-end}}
+
+/* Apple-like customisable widget layout and local Files library */
+.widget-actions .widget-drag-handle{font-size:1.25rem;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;min-width:34px}
+.widget-actions .widget-drag-handle:active{cursor:grabbing}
+.teacher-widget{transition:box-shadow .16s,transform .16s,border-color .16s}
+.teacher-widget.widget-dragging{opacity:.72;transform:scale(.985);border-color:var(--brand);box-shadow:0 16px 36px rgba(15,60,35,.18);z-index:2}
+.teacher-widget-grid{align-items:stretch}
+.file-tag-manager,.file-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:9px;align-items:end;margin:12px 0}
+.file-tag-manager{padding:12px;border:1px solid var(--line);border-radius:13px;background:var(--bg)}
+.file-tag-manager label,.file-filters label{display:grid;gap:5px;min-width:0}
+.file-entry{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:12px;border:1px solid var(--line);border-radius:13px;background:var(--card)}
+.file-entry-main{display:grid;gap:8px;min-width:0}
+.file-entry-name{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}
+.file-entry-name input{min-width:0}
+.file-entry-meta{font-size:.82rem;color:var(--mute);overflow-wrap:anywhere}
+.file-entry-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.file-entry-actions .btn{min-height:36px}
+@media(max-width:560px){.file-entry{grid-template-columns:1fr}.file-entry-name{grid-template-columns:minmax(0,1fr)}.file-entry-actions{justify-content:flex-start}}
