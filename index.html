@@ -20,6 +20,7 @@
   <button class="page-link" type="button" data-page="calculate"><span class="nav-icon">∑</span><span>Calculate</span></button>
   <button class="page-link" type="button" data-page="export"><span class="nav-icon">⇧</span><span>Copy &amp; Export</span></button>
   <button class="page-link" type="button" data-page="summary"><span class="nav-icon">✦</span><span>Summarise</span></button>
+  <button class="page-link" type="button" data-page="timetable"><span class="nav-icon">▦</span><span>TT Copier</span></button>
 </nav>
 <main>
 <div class="app-page" id="page-extract">
@@ -66,6 +67,16 @@
 <div class="row wrap"><button id="summaryBtn" class="btn primary">Summarise with Gemini</button><button id="copySummary" class="btn" disabled>Copy summary</button></div><div id="summaryOutput" class="summary-output" aria-live="polite">Your summary will appear here.</div><p class="hint">Gemini summaries need the separate SnapData summary API on Render and its API key stored as a secret. OCR and exports work without it.</p>
 </section>
 </div>
+<div class="app-page" id="page-timetable" hidden>
+<section class="panel"><h2>Timetable Copier</h2>
+<p class="hint">Upload a timetable photo. SnapData will recognise the words and arrange them into editable rows. Check the result carefully before copying it.</p>
+<div class="row wrap"><label class="btn primary" for="ttImage">Upload timetable photo</label><input id="ttImage" type="file" accept="image/*" hidden><button id="ttRead" class="btn" type="button" disabled>Read timetable</button></div>
+<div id="ttPreviewWrap" class="preview" hidden><img id="ttPreview" alt="Timetable photo preview"></div>
+<div id="ttStatus" class="status" role="status" aria-live="polite"></div>
+<div id="ttOutputWrap" hidden><label for="ttOutput">Editable timetable text <span class="hint">(Use tabs between columns for best results)</span></label><textarea id="ttOutput" rows="12" spellcheck="false" placeholder="Your recognised timetable will appear here…"></textarea>
+<div class="row wrap"><button id="ttCopy" class="btn primary" type="button">Copy timetable</button><button id="ttCsv" class="btn" type="button">Export CSV</button><button id="ttClear" class="btn" type="button">Clear</button></div></div>
+</section>
+</div>
 </main><div id="toast" class="toast" role="status" aria-live="polite"></div><footer>No accounts. No ads. Photos stay in your browser for OCR and editing. Summary text is sent to Gemini only when you request a summary.</footer>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="script.js"></script><script src="pwa.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="script.js"></script><script src="timetable.js"></script><script src="pwa.js"></script>
 </body></html>
