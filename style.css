@@ -92,3 +92,37 @@ footer{max-width:850px;margin:auto;line-height:1.6;padding:20px 18px 28px}
   .btn{padding:9px 11px}
 }
 @media(prefers-reduced-motion:reduce){.panel,.btn,input,select{transition:none!important}}
+
+/* Dedicated task pages: keep each workflow focused and make navigation obvious */
+.page-nav{
+  position:sticky;top:0;z-index:8;display:flex;gap:7px;align-items:stretch;
+  padding:10px max(12px,calc((100vw - 1000px)/2));
+  background:color-mix(in srgb,var(--card) 94%,transparent);
+  border-bottom:1px solid var(--line);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;
+}
+.page-link{
+  flex:1 0 auto;display:flex;align-items:center;justify-content:center;gap:8px;
+  min-height:46px;padding:9px 14px;border:1px solid transparent;border-radius:12px;
+  background:transparent;color:var(--mute);font:inherit;font-size:.91rem;font-weight:720;
+  white-space:nowrap;cursor:pointer;transition:background .15s,color .15s,border-color .15s;
+}
+.page-link:hover{background:var(--bg);color:var(--ink)}
+.page-link.active{background:var(--brand);color:#fff;border-color:var(--brand);box-shadow:0 3px 10px rgba(20,80,50,.12)}
+@media(prefers-color-scheme:dark){.page-link.active{color:#082015}}
+.nav-icon{display:inline-flex;align-items:center;justify-content:center;font-size:1.08rem;line-height:1;min-width:18px}
+.app-page[hidden]{display:none!important}
+.app-page{min-width:0;animation:page-in .18s ease-out}
+.app-page>section.panel{min-width:0}
+.app-page h2{font-size:clamp(1.1rem,2.5vw,1.3rem)}
+@keyframes page-in{from{opacity:.75;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+@media(min-width:700px){
+  .page-nav{gap:9px;padding-top:12px;padding-bottom:12px}
+  .page-link{flex:0 1 190px}
+}
+@media(max-width:430px){
+  .page-nav{gap:5px;padding:8px 9px}
+  .page-link{padding:8px 11px;min-height:44px;font-size:.86rem;gap:6px}
+  .nav-icon{font-size:1rem}
+}
+@media(prefers-reduced-motion:reduce){.app-page{animation:none}}
