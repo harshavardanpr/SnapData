@@ -34,6 +34,6 @@
 <div class="summary-controls"><label>Summarise<select id="summaryScope"><option value="all">All extracted items</option><option value="selected">Selected items only</option></select></label><label>Style<select id="summaryStyle"><option value="short">Short summary</option><option value="detailed">Detailed summary</option><option value="bullets">Key points</option></select></label></div>
 <div class="row wrap"><button id="summaryBtn" class="btn primary">Summarise with Gemini</button><button id="copySummary" class="btn" disabled>Copy summary</button></div><div id="summaryOutput" class="summary-output" aria-live="polite">Your summary will appear here.</div><p class="hint">Gemini summaries need the separate SnapData summary API on Render and its API key stored as a secret. OCR and exports work without it.</p>
 </section>
-</main><div id="toast" class="toast" role="status" aria-live="polite"></div><footer>No accounts. No ads. No uploads. OCR and image editing run in your browser.</footer>
+</main><div id="toast" class="toast" role="status" aria-live="polite"></div><footer>No accounts. No ads. Photos stay in your browser for OCR and editing. Summary text is sent to Gemini only when you request a summary.</footer>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="script.js"></script>
 </body></html>
