@@ -53,7 +53,7 @@
         var sendCanvas=document.createElement('canvas');sendCanvas.width=Math.max(1,Math.round(w*scale));sendCanvas.height=Math.max(1,Math.round(h*scale));
         sendCanvas.getContext('2d').drawImage(canvas,0,0,sendCanvas.width,sendCanvas.height);
         var dataUrl=sendCanvas.toDataURL('image/jpeg',0.84);
-        fetch('https://snapdata-summary-api.onrender.com/api/ocr',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:dataUrl,mode:$('ocrMode').value})})
+        fetch('https://snapdata-api.onrender.com/api/ocr',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:dataUrl,mode:$('ocrMode').value})})
           .then(function(r){return r.json().then(function(data){if(!r.ok)throw new Error(data.error||'Cloud OCR unavailable');return data})})
           .then(function(data){if(!data.text)reject(new Error('No text returned'));else resolve(data.text)})
           .catch(reject);
@@ -258,7 +258,7 @@
     if(!source){toast($('summaryScope').value==='selected'?'Select items first':'Extract some notes first');return}
     if(source.length>40000){toast('Please summarise up to 40,000 characters at a time');return}
     var button=$('summaryBtn'),out=$('summaryOutput');button.disabled=true;out.textContent='Creating summary…';
-    fetch('https://snapdata-summary-api.onrender.com/api/summarize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:source,style:$('summaryStyle').value})})
+    fetch('https://snapdata-api.onrender.com/api/summarize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:source,style:$('summaryStyle').value})})
       .then(function(r){return r.json().then(function(data){if(!r.ok)throw new Error(data.error||'Summary service unavailable');return data})})
       .then(function(data){out.textContent=data.summary||'No summary was returned.';$('copySummary').disabled=!data.summary;toast('Summary ready')})
       .catch(function(e){out.textContent='Summary could not be created. The summary API must be deployed and configured on Render. Your extracted notes are still here. ('+e.message+')';$('copySummary').disabled=true})
