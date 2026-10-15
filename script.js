@@ -287,7 +287,7 @@
       if(selectedOnly&&mode!=='table'){
         var chosenRows=pick(true);
         if(!chosenRows.length){toast('Nothing selected');return}
-        text=chosenRows.map(function(i){return i.text}).join('\\n');count=chosenRows.length;
+        text=chosenRows.map(function(i){return i.text}).join('\n');count=chosenRows.length;
       }else{text=tableCopyText(selectedOnly&&mode==='table');count=cells.length||table.length}
       if(!text.trim()){toast('Nothing to copy');return}
     }else{
