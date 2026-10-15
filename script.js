@@ -153,7 +153,11 @@
   }
   function undo() {
     if (!history.length) return;
-    items = JSON.parse(history.pop()); $('undo').disabled = !history.length; render();
+    var previous = JSON.parse(history.pop());
+    items = Array.isArray(previous) ? previous : (previous.items || []);
+    if (!Array.isArray(previous)) table = Array.isArray(previous.table) ? previous.table : [];
+    $('undo').disabled = !history.length;
+    if (mode === 'table') renderTable(); else render();
   }
 
   /* ---------- calculate ---------- */
