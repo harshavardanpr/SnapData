@@ -24,7 +24,7 @@
 <div class="row"><button id="extractBtn" class="btn primary" disabled>Extract data</button><button id="clearImg" class="btn" disabled>Clear image</button></div>
 <details class="advanced settings"><summary>Recognition settings &amp; cloud OCR</summary>
 <div class="ocr-options"><label>Recognition<select id="ocrMode"><option value="auto">Auto (text + table)</option><option value="text">Text / lists</option><option value="numbers">Numbers</option><option value="table">Table</option></select></label><label>Quality<select id="quality"><option value="auto">Auto</option><option value="high">High resolution / small text</option><option value="fast">Fast</option></select></label></div>
-<label class="cloud-ocr-choice"><input id="cloudOcrConsent" type="checkbox"> Allow Gemini cloud OCR fallback for this photo</label><p class="hint">For emoji-heavy notes or difficult handwriting, Gemini may read more accurately. This stays off unless you opt in; the photo may then be sent to Gemini when local OCR struggles. Avoid private student details unless you have permission.</p>
+<label class="cloud-ocr-choice"><input id="cloudOcrConsent" type="checkbox"> Use Gemini cloud OCR for this photo (better with emojis)</label><p class="hint">Gemini can recognise emojis and difficult handwriting better. This stays off unless you opt in; when enabled, the photo is sent to Gemini for OCR. Avoid private student details unless you have permission.</p>
 </details>
 <div id="status" class="status" role="status" aria-live="polite"></div><progress id="bar" max="100" value="0" hidden></progress>
 </section>
