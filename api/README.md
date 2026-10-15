@@ -1,6 +1,6 @@
-# SnapData Gemini Summary API
+# SnapData Gemini OCR and Summary API
 
-This is a small server for the optional Gemini summary feature. It keeps the Gemini API key out of the public website. OCR, editing, copying and exports do not depend on this service.
+This small server provides optional Gemini cloud OCR and note summaries. It keeps the Gemini API key out of the public website. Local OCR, editing, copying and exports do not depend on this service.
 
 ## Deploy on Render
 
@@ -16,8 +16,8 @@ The frontend currently calls `https://snapdata-summary-api.onrender.com/api/summ
 
 ## Privacy and limits
 
-- The browser sends only the selected extracted text when a user presses **Summarise with Gemini**; it does not upload the photo.
+- Local OCR is the default. The photo is sent to Gemini for cloud OCR only if the user checks the explicit cloud-OCR consent box and local OCR confidence is low (or no text is found).\n- For summaries, the browser sends only the selected extracted text when a user presses **Summarise with Gemini**; it does not upload the photo.
 - The API key is read from the server environment.
-- Requests are limited to 40,000 characters and eight requests per IP per minute as a basic abuse guard.
+- Summary text is limited to 40,000 characters; cloud OCR image data is limited to 7 MB. Requests are limited to eight per IP per minute as a basic abuse guard.
 - Gemini free-tier availability, model access, and quotas can change. The summary feature may stop temporarily when quota is exhausted.
 - Do not send sensitive student or personal information to a third-party AI service unless you have permission and are comfortable with the provider's data policies.
