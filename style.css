@@ -25,3 +25,70 @@
 #regionSelectBtn.active{background:var(--brand);color:#fff;border-color:var(--brand)}
 @media(min-width:560px){.action-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.export-options{grid-column:1/-1}}
 @media(max-width:380px){.panel{padding:11px}.btn{padding:9px 10px}.action-grid{grid-template-columns:1fr 1fr}.region-tools .btn{flex:1 1 auto}}
+
+
+/* SnapData modern UI refresh — keeps existing IDs/classes and behaviour intact */
+:root{
+  --bg:#f5f7f5;--card:#ffffff;--ink:#17241d;--mute:#66756c;--line:#dce5de;
+  --brand:#176b4b;--accent:#f3b63f;--danger:#b42318;--r:18px;
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#0d1511;--card:#141f19;--ink:#edf5ef;--mute:#a4b4aa;--line:#2b3b31;--brand:#65d49a;--accent:#f3b63f;--danger:#ff8b80}
+}
+body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.55;letter-spacing:-.01em}
+.top{
+  position:relative;overflow:hidden;
+  background:radial-gradient(ellipse at 85% -20%,rgba(89,210,151,.25),transparent 42%),linear-gradient(135deg,#102c20 0%,#176b4b 68%,#1f805b 100%);
+  color:#f5fff8;padding:calc(26px + env(safe-area-inset-top)) max(18px,calc((100vw - 1000px)/2)) 28px;
+  border-bottom:0;box-shadow:0 10px 30px rgba(17,55,37,.12)
+}
+.top:after{content:"";position:absolute;width:210px;height:210px;border:1px solid rgba(255,255,255,.13);border-radius:50%;right:-55px;bottom:-140px;box-shadow:0 0 0 28px rgba(255,255,255,.035),0 0 0 58px rgba(255,255,255,.025);pointer-events:none}
+.top h1{font-size:clamp(1.8rem,4vw,2.35rem);font-weight:800;letter-spacing:-.055em;line-height:1.15}
+.top p{max-width:650px;font-size:.98rem;opacity:.9;margin-top:9px}
+main{max-width:1040px;padding:20px 16px 28px;gap:16px}
+.panel{padding:clamp(15px,2.4vw,23px);border-radius:var(--r);border:1px solid var(--line);box-shadow:0 5px 22px rgba(20,45,30,.045);transition:border-color .18s,box-shadow .18s}
+@media(prefers-color-scheme:dark){.panel{box-shadow:0 5px 22px rgba(0,0,0,.12)}}
+h2{font-size:1.13rem;font-weight:760;letter-spacing:-.025em;margin-bottom:13px}
+.btn{border-radius:12px;font-weight:650;transition:transform .14s,border-color .14s,background .14s,box-shadow .14s;box-shadow:0 1px 2px rgba(10,30,18,.035)}
+.btn:not(:disabled):active{transform:translateY(1px)}
+.btn:hover{border-color:var(--brand);box-shadow:0 3px 10px rgba(20,80,50,.08)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+@media(prefers-color-scheme:dark){.btn.primary{color:#082015}}
+.btn.sm{border-radius:10px}
+input[type=text],input[type=number],input[type=search],select,textarea{border-radius:11px;transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--brand);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 15%,transparent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.preview{border-radius:14px;border-style:dashed;padding:10px}
+.preview img{border-radius:10px}
+.editor,.advanced{border-radius:13px}
+.advanced{padding-inline:12px}
+.advanced>summary{min-height:46px}
+.status{padding:2px 0}
+.status:not(:empty){margin-top:10px}
+.count{font-weight:650}
+.list{gap:8px;max-height:58vh}
+.item{border-radius:12px;padding:6px 8px;transition:border-color .12s,background .12s}
+.item.sel{box-shadow:inset 3px 0 0 var(--brand)}
+.item .item-text{border-radius:8px}
+.tabs{gap:6px;border-bottom-color:var(--line)}
+.tab{border-radius:10px 10px 0 0;padding:10px 15px}
+.table-wrap{border-radius:13px}
+.data-table td,.data-table th{padding:7px}
+.data-table th{font-weight:750}
+.cell-input{border-radius:6px}
+.summary-output{border-radius:13px;line-height:1.65}
+.action-grid{gap:9px}
+.toast{border-radius:13px;box-shadow:0 12px 35px rgba(0,0,0,.2);padding:12px 17px}
+footer{max-width:850px;margin:auto;line-height:1.6;padding:20px 18px 28px}
+@media(min-width:760px){
+  main{padding-top:24px}
+  .panel{padding:22px}
+  .editor-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media(max-width:420px){
+  .top{padding-left:18px;padding-right:18px}
+  main{padding:12px;gap:12px}
+  .panel{padding:14px;border-radius:15px}
+  .btn{padding:9px 11px}
+}
+@media(prefers-reduced-motion:reduce){.panel,.btn,input,select{transition:none!important}}
