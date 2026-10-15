@@ -3,6 +3,8 @@
 A free, mobile-friendly photo-to-data web app. Take or upload a photo, enhance it, recognise text, numbers or tables in the browser, edit the result, calculate values, share it, and export to TXT, CSV or XLSX.
 
 ## Features
+- Dedicated task pages for Extract, Results, Calculate, Copy & Export, and Summarise, so tools are not all crowded into one long screen.
+- OCR automatically opens the Results page after a successful extraction; navigation keeps the same results available between tasks.
 - Image editor: zoom, crop, brightness, contrast, sharpening, rotation and save enhanced JPG.
 - Browser OCR with free Tesseract.js, with text, number and table recognition profiles.
 - High-quality mode splits very large images into overlapping sections to improve small-text recognition and falls back to a normal OCR pass when needed.
