@@ -1,0 +1,25 @@
+{
+  "id": "./",
+  "name": "SnapData – Photo to Data",
+  "short_name": "SnapData",
+  "description": "Turn photos into clean, editable data.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f5f7f5",
+  "theme_color": "#176b4b",
+  "categories": [
+    "productivity",
+    "education",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
