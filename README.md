@@ -3,8 +3,9 @@
 A free, mobile-friendly photo-to-data web app. Take or upload a photo, enhance it, recognise text, numbers or tables in the browser, edit the result, calculate values, share it, and export to TXT, CSV or XLSX.
 
 ## Features
-- Dedicated task pages for Extract, Results, Calculate, Copy & Export, Summarise, and TT Copier (Timetable Copier), so tools are not all crowded into one long screen.
-- Installable progressive web app with a custom icon and cached app shell; offline OCR still needs the OCR library to be available.
+- Dedicated task pages for Extract, Results, Calculate, Copy & Export, Summarise, TT Copier (Timetable Copier), and Teacher Workspace.
+- Teacher Workspace includes an editable timetable grid, marks table with totals/percentages and range checks, daily class log, worksheet question organiser, teacher notes with a local key-point helper, and local backup/restore.
+- Installable progressive web app with a custom icon, Android/desktop install help, and a service worker that caches only known app-shell assets (not user records or API responses). Offline OCR still needs its OCR library to be available.
 - OCR automatically opens the Results page after a successful extraction; navigation keeps the same results available between tasks.
 - Image editor: zoom, crop, brightness, contrast, sharpening, rotation and save enhanced JPG.
 - Browser OCR with free Tesseract.js, with text, number and table recognition profiles.
@@ -29,3 +30,11 @@ By default, images are processed in the browser with Tesseract.js. Tesseract.js,
 
 ## Table workflow
 Choose **Table** recognition for a table, or use **Auto**. Open **Table** in Review and organise to correct cells. Select cells, whole rows or columns, then calculate, copy or export.
+
+## Teacher Workspace and local data
+The Teacher Workspace saves timetable, marks, class-log entries and notes in this browser's local storage. Use **Privacy & backup** to export/import a JSON backup or clear those tool records. Backups can contain personal information; store them carefully. This is local-device storage, not an encrypted account or cloud-sync service. Avoid putting sensitive student records on a shared device.
+
+The marks tool currently uses three configurable-by-editing-column-label core subjects (Maths, Science and English) with a maximum of 100 each. Check the maximum marks and all OCR results before using them for school records. The worksheet organiser is a text-splitting aid, not a guarantee of perfect question detection.
+
+## Install on Android
+Open the live site in Chrome, open the ⋮ menu, and choose **Install app** or **Add to Home screen**. If an install prompt is not available, use the in-app **How to install** button. The app shell can be cached for reopening; OCR libraries and any cloud summaries can still require internet.
