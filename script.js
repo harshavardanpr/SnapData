@@ -76,7 +76,7 @@
           finalLines=finalLines.map(function(x){return String(x).trim()}).filter(function(x){return x});
           finalLines=finalLines.filter(function(x,i,a){return a.indexOf(x)===i});
           if(!finalLines.length){setStatus('No text found. Try a sharper, well-lit photo.',true);done();return}
-          snapshot();finalLines.forEach(function(l){add(l)});if(finalLines.some(function(l){return l.indexOf('\t')>=0}))table=finalLines.map(function(l){return l.split('\t')});
+          snapshot();table=[];finalLines.forEach(function(l){add(l)});if(finalLines.some(function(l){return l.indexOf('\t')>=0}))table=finalLines.map(function(l){return l.split('\t')});
           setStatus('Found '+finalLines.length+' lines'+(source==='cloud'?' using Gemini fallback':'')+'. Check names and numbers before exporting.');render();done();
         }
         if($('cloudOcrConsent')&&$('cloudOcrConsent').checked){
@@ -240,18 +240,18 @@
     return out.join('\n');
   }
   function copy(selectedOnly) {
-    var text='',count=0;
-    if(mode==='table'){
-      var cells=selectedOnly?selectedTableCells():[];
-      if(selectedOnly&&!cells.length){toast('Select some table cells first');return}
-      text=tableCopyText(selectedOnly);count=cells.length||table.length;
+    var text='',count=0,hasTabularItems=items.some(function(i){return i.text.indexOf('\\t')>=0}),copyAsTable=mode==='table'||(table.length>0&&hasTabularItems);
+    if(copyAsTable){
+      var cells=selectedOnly&&mode==='table'?selectedTableCells():[];
+      if(selectedOnly&&mode==='table'&&!cells.length){toast('Select some table cells first');return}
+      text=tableCopyText(selectedOnly&&mode==='table');count=cells.length||table.length;
       if(!text.trim()){toast('Nothing to copy');return}
     }else{
       var list=selectedOnly?pick(true):items;
       if(!list.length){toast(selectedOnly?'Nothing selected':'Nothing to copy');return}
       text=formatCopiedText(list.map(function(i){return i.text}));count=list.length;
     }
-    var done=function(){toast('Copied '+count+(mode==='table'?' table cells/rows':' items'))};
+    var done=function(){toast('Copied '+count+(copyAsTable?' table cells/rows':' items'))};
     var fallback=function(){
       var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
       document.body.appendChild(ta);ta.select();
