@@ -50,7 +50,7 @@ app.post("/api/ocr", async (req, res) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ contents: [{ parts: [
-        { text: "You are an OCR transcription engine, not a summariser. " + instructions[mode] + " Do not invent unreadable text. Use [unclear] where necessary. Return only the transcription, with no introduction or code fences." },
+        { text: "You are an OCR transcription engine, not a summariser. " + instructions[mode] + " Preserve recognizable emoji symbols exactly (for example, ❤️, ⭐, ✅, 📌). If an emoji is clearly present but its exact symbol is uncertain, write a short label such as [heart emoji] rather than silently dropping it. Do not invent unreadable text. Use [unclear] where necessary. Return only the transcription, with no introduction or code fences." },
         { inlineData: { mimeType, data: match[2] } }
       ] }], generationConfig: { temperature: 0, maxOutputTokens: 8192 } }),
       signal: AbortSignal.timeout(60_000)
