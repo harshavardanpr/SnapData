@@ -244,7 +244,11 @@
     if(copyAsTable){
       var cells=selectedOnly&&mode==='table'?selectedTableCells():[];
       if(selectedOnly&&mode==='table'&&!cells.length){toast('Select some table cells first');return}
-      text=tableCopyText(selectedOnly&&mode==='table');count=cells.length||table.length;
+      if(selectedOnly&&mode!=='table'){
+        var chosenRows=pick(true);
+        if(!chosenRows.length){toast('Nothing selected');return}
+        text=chosenRows.map(function(i){return i.text}).join('\\n');count=chosenRows.length;
+      }else{text=tableCopyText(selectedOnly&&mode==='table');count=cells.length||table.length}
       if(!text.trim()){toast('Nothing to copy');return}
     }else{
       var list=selectedOnly?pick(true):items;
