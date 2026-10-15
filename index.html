@@ -81,7 +81,7 @@
 <div class="app-page" id="page-teacher-tools" hidden>
 <section class="panel"><h2>Teacher workspace</h2><p class="hint">Local-first tools for classroom work. Your entries are saved on this device until you export or clear them.</p>
 <div class="tool-switcher" role="tablist" aria-label="Teacher tools">
-<button class="tab active" type="button" data-tool="tt-grid">Timetable grid</button><button class="tab" type="button" data-tool="marks">Marks</button><button class="tab" type="button" data-tool="class-log">Class log</button><button class="tab" type="button" data-tool="worksheet">Worksheet</button><button class="tab" type="button" data-tool="notes">Teacher notes</button><button class="tab" type="button" data-tool="backup">Privacy &amp; backup</button>
+<button class="tab active" type="button" data-tool="tt-grid">Timetable grid</button><button class="tab" type="button" data-tool="marks">Marks</button><button class="tab" type="button" data-tool="class-log">Class log</button><button class="tab" type="button" data-tool="homework">Homework dashboard</button><button class="tab" type="button" data-tool="worksheet">Worksheet</button><button class="tab" type="button" data-tool="notes">Teacher notes</button><button class="tab" type="button" data-tool="backup">Privacy &amp; backup</button>
 </div>
 <div class="teacher-tool" id="tool-tt-grid">
 <h3>Editable timetable grid</h3><p class="hint">Paste tab-separated timetable text from TT Copier, or start with a blank grid. Edit cells directly, then save or export.</p>
@@ -96,6 +96,34 @@
 <div class="teacher-tool" id="tool-class-log" hidden>
 <h3>Daily class log</h3><div class="form-grid"><label>Date<input id="logDate" type="date"></label><label>Class<input id="logClass" placeholder="e.g. Grade 7B"></label><label>Subject<input id="logSubject" placeholder="Subject"></label><label>Lesson covered<input id="logLesson" placeholder="Topic or lesson"></label><label>Homework<input id="logHomework" placeholder="Homework / due date"></label><label>Attendance or notes<input id="logNotes" placeholder="Optional notes"></label></div>
 <div class="row wrap"><button class="btn primary" id="logSave" type="button">Save log entry</button><button class="btn" id="logExport" type="button">Export CSV</button></div><div id="logEntries" class="saved-list"></div>
+</div>
+<div class="teacher-tool" id="tool-homework" hidden>
+<h3>Homework dashboard</h3>
+<p class="hint">Keep a class-by-class record of homework given, instructions and due dates. This first version saves on this browser only; it does not yet sync with students, Google Classroom or other teachers.</p>
+<div class="homework-stats" aria-live="polite">
+<article class="homework-stat"><span>Active assignments</span><strong id="hwActiveCount">0</strong></article>
+<article class="homework-stat"><span>Due in 7 days</span><strong id="hwSoonCount">0</strong></article>
+<article class="homework-stat"><span>Overdue</span><strong id="hwOverdueCount">0</strong></article>
+</div>
+<details class="advanced" open><summary id="hwFormHeading">Add homework</summary>
+<div class="form-grid">
+<label>Class / section<input id="hwClass" placeholder="e.g. Grade 7B" required></label>
+<label>Subject<input id="hwSubject" placeholder="e.g. Science" required></label>
+<label>Homework title<input id="hwTitle" placeholder="e.g. Chapter 4 questions" required></label>
+<label>Date assigned<input id="hwAssigned" type="date" required></label>
+<label>Due date<input id="hwDue" type="date" required></label>
+<label>Status<select id="hwStatus"><option value="Assigned">Assigned</option><option value="Completed">Completed</option><option value="Cancelled">Cancelled</option></select></label>
+</div>
+<label for="hwDetails">Instructions / pages / notes</label><textarea id="hwDetails" rows="3" placeholder="Page numbers, questions, materials to bring…"></textarea>
+<div class="row wrap"><button class="btn primary" id="hwSave" type="button">Save homework</button><button class="btn" id="hwCancelEdit" type="button" hidden>Cancel edit</button><button class="btn" id="hwExport" type="button">Export homework CSV</button></div>
+<p id="hwStatusMessage" class="status" role="status" aria-live="polite"></p>
+</details>
+<div class="homework-filters">
+<label>Filter class<input id="hwFilterClass" placeholder="All classes"></label>
+<label>Filter status<select id="hwFilterStatus"><option value="active">Active only</option><option value="all">All statuses</option><option value="Assigned">Assigned</option><option value="Completed">Completed</option><option value="Cancelled">Cancelled</option></select></label>
+<label>Search<input id="hwSearch" placeholder="Subject or homework title"></label>
+</div>
+<div id="hwAssignments" class="saved-list"></div>
 </div>
 <div class="teacher-tool" id="tool-worksheet" hidden>
 <h3>Worksheet question organiser</h3><p class="hint">Paste OCR output or type questions. The tool splits numbered questions into editable entries. Review the text before printing or copying.</p><textarea id="worksheetInput" rows="9" placeholder="1. First question&#10;2. Second question"></textarea><div class="row wrap"><button class="btn primary" id="worksheetSplit" type="button">Organise questions</button><button class="btn" id="worksheetCopy" type="button">Copy organised text</button><button class="btn" id="worksheetPrint" type="button">Print worksheet</button></div><div id="worksheetOutput" class="saved-list"></div>
