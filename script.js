@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   var $=function(id){return document.getElementById(id);};
-  var items=[],history=[],uid=0,file=null,busy=false,sourceImg=null,edit={zoom:1,brightness:100,contrast:100,sharpen:0,rotation:0,crop:null},cropStart=null,table=[],mode='list';
+  var items=[],history=[],uid=0,file=null,busy=false,sourceImg=null,edit={zoom:1,brightness:100,contrast:100,sharpen:0,rotation:0,crop:null},cropStart=null,regionStart=null,regionMode=false,table=[],mode='list';
   var NUM=/^[-+(]?[$€£¥₹]?\s*-?\d[\d,]*(\.\d+)?\s*%?\)?$|^[-+]?\.\d+$/;
   function isNum(t){return NUM.test(t.trim())}
   function toNum(t){var s=t.trim(),neg=/^\(.*\)$/.test(s),n=parseFloat(s.replace(/[^0-9.\-]/g,''));return neg?-Math.abs(n):n}
@@ -12,7 +12,7 @@
   function snapshot(){history.push(JSON.stringify({items:items,table:table}));if(history.length>30)history.shift();$('undo').disabled=false}
   function add(text,o){items.push({id:++uid,text:text,sel:false,o:o==null?uid:o})}
 
-  function onFile(e){var f=e.target.files&&e.target.files[0];e.target.value='';if(!f)return;if(!/^image\//.test(f.type)){setStatus('Please choose an image file.',true);return}file=f;edit={zoom:1,brightness:100,contrast:100,sharpen:0,rotation:0,crop:null};loadSource(f);$('previewWrap').hidden=false;$('editor').hidden=false;$('extractBtn').disabled=false;$('clearImg').disabled=false;setStatus('Image ready. Enhance it, then extract.')}
+  function onFile(e){var f=e.target.files&&e.target.files[0];e.target.value='';if(!f)return;if(!/^image\//.test(f.type)){setStatus('Please choose an image file.',true);return}file=f;edit={zoom:1,brightness:100,contrast:100,sharpen:0,rotation:0,crop:null};regionStart=null;regionMode=false;$('regionSelectionBox').hidden=true;$('regionTools').hidden=false;$('regionSelectBtn').disabled=false;$('readRegionBtn').disabled=true;$('regionSelectBtn').classList.remove('active');$('regionSelectBtn').textContent='Select text area';loadSource(f);$('previewWrap').hidden=false;$('editor').hidden=false;$('extractBtn').disabled=false;$('clearImg').disabled=false;setStatus('Image ready. Enhance it, then extract.')}
   function loadSource(f){var u=URL.createObjectURL(f),im=new Image();im.onload=function(){sourceImg=im;URL.revokeObjectURL(u);drawPreview()};im.src=u}
   function renderCanvas(){if(!sourceImg)return null;var w=sourceImg.naturalWidth,h=sourceImg.naturalHeight,r=(edit.rotation%360+360)%360,c=document.createElement('canvas');c.width=(r===90||r===270)?h:w;c.height=(r===90||r===270)?w:h;var x=c.getContext('2d');x.save();x.translate(c.width/2,c.height/2);x.rotate(r*Math.PI/180);x.filter='brightness('+edit.brightness+'%) contrast('+edit.contrast+'%)';var sx=edit.crop?edit.crop.x:0,sy=edit.crop?edit.crop.y:0,sw=edit.crop?edit.crop.w:w,sh=edit.crop?edit.crop.h:h;x.drawImage(sourceImg,sx,sy,sw,sh,-sw/2,-sh/2,sw,sh);x.restore();if(edit.sharpen)sharpenCanvas(c,edit.sharpen);return c}
   function sharpenCanvas(c,a){var x=c.getContext('2d'),d=x.getImageData(0,0,c.width,c.height),src=d.data,out=new Uint8ClampedArray(src),k=.12*a,w=c.width,h=c.height;for(var y=1;y<h-1;y++)for(var z=1;z<w-1;z++){var i=(y*w+z)*4;for(var q=0;q<3;q++)out[i+q]=Math.max(0,Math.min(255,src[i+q]*(1+4*k)-k*(src[i-4+q]+src[i+4+q]+src[i-w*4+q]+src[i+w*4+q])))}d.data.set(out);x.putImageData(d,0,0)}
@@ -21,7 +21,7 @@
   function downloadBlob(n,b){var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},1000)}
   function resetEdit(){edit={zoom:1,brightness:100,contrast:100,sharpen:0,rotation:0,crop:null};$('zoom').value=100;$('brightness').value=100;$('contrast').value=100;$('sharpen').value=0;drawPreview()}
   function applyCrop(){if(!sourceImg||!cropStart)return;var r=$('preview').getBoundingClientRect(),x=Math.min(cropStart.x,cropStart.ex),y=Math.min(cropStart.y,cropStart.ey),w=Math.abs(cropStart.ex-cropStart.x),h=Math.abs(cropStart.ey-cropStart.y);if(w<10||h<10)return;edit.crop={x:x/r.width*sourceImg.naturalWidth,y:y/r.height*sourceImg.naturalHeight,w:w/r.width*sourceImg.naturalWidth,h:h/r.height*sourceImg.naturalHeight};cropStart=null;drawPreview();toast('Crop applied')}
-  function clearImage(){file=null;sourceImg=null;$('preview').removeAttribute('src');$('previewWrap').hidden=true;$('editor').hidden=true;$('extractBtn').disabled=true;$('clearImg').disabled=true;$('bar').hidden=true;setStatus('')}
+  function clearImage(){file=null;sourceImg=null;regionStart=null;regionMode=false;$('regionTools').hidden=true;$('regionSelectionBox').hidden=true;$('preview').removeAttribute('src');$('previewWrap').hidden=true;$('editor').hidden=true;$('extractBtn').disabled=true;$('clearImg').disabled=true;$('regionSelectBtn').disabled=true;$('readRegionBtn').disabled=true;$('bar').hidden=true;setStatus('')}
 
   function prepare(f) {
     // Preserve original pixel dimensions: downscaling here loses small handwriting.
@@ -79,9 +79,9 @@
           snapshot();finalLines.forEach(function(l){add(l)});if(finalLines.some(function(l){return l.indexOf('\t')>=0}))table=finalLines.map(function(l){return l.split('\t')});
           setStatus('Found '+finalLines.length+' lines'+(source==='cloud'?' using Gemini fallback':'')+'. Check names and numbers before exporting.');render();done();
         }
-        if($('cloudOcrConsent')&&$('cloudOcrConsent').checked&&(confidence<70||!lines.length)){
-          setStatus('Local OCR confidence is low. Trying the optional Gemini fallback…');
-          cloudOcr(c).then(function(text){if(!text)throw new Error('No text returned');applyLines(text.split(/\r?\n/).map(function(x){return x.trim()}).filter(Boolean),'cloud')}).catch(function(){setStatus('Cloud OCR was unavailable. Keeping the local result; check it carefully.',true);applyLines(lines,'local')});
+        if($('cloudOcrConsent')&&$('cloudOcrConsent').checked){
+          setStatus('Using Gemini cloud OCR (you opted in)…');
+          cloudOcr(c).then(function(text){if(!text)throw new Error('No text returned');applyLines(text.split(/\r?\n/).map(function(x){return x.trim()}).filter(Boolean),'cloud')}).catch(function(){setStatus('Gemini OCR was unavailable. Keeping the local result; check it carefully.',true);applyLines(lines,'local')});
           return;
         }
         applyLines(lines,'local');
@@ -123,8 +123,8 @@
       li.className = 'item' + (it.sel ? ' sel' : '') + (isNum(it.text) ? ' isnum' : '');
       var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = it.sel; cb.setAttribute('aria-label', 'Select item');
       cb.onchange = function () { it.sel = cb.checked; li.classList.toggle('sel', it.sel); stats(); };
-      var tx = document.createElement('input'); tx.type = 'text'; tx.value = it.text; tx.setAttribute('aria-label', 'Edit item');
-      tx.oninput = function () { it.text = tx.value; li.classList.toggle('isnum', isNum(it.text)); stats(); };
+      var tx = document.createElement('div'); tx.className='item-text'; tx.contentEditable='true'; tx.setAttribute('role','textbox'); tx.setAttribute('aria-label', 'Edit or select text'); tx.textContent = it.text;
+      tx.oninput = function () { it.text = tx.textContent || ''; li.classList.toggle('isnum', isNum(it.text)); stats(); };
       var del = document.createElement('button'); del.className = 'x'; del.textContent = '×'; del.setAttribute('aria-label', 'Delete item');
       del.onclick = function () { snapshot(); items = items.filter(function (i) { return i !== it; }); render(); };
       li.appendChild(cb); li.appendChild(tx); li.appendChild(del); list.appendChild(li);
@@ -276,9 +276,13 @@
   $('saveEnhanced').onclick=saveEnhanced;$('resetEdit').onclick=resetEdit;$('rotL').onclick=function(){edit.rotation-=90;drawPreview()};$('rotR').onclick=function(){edit.rotation+=90;drawPreview()};
   ['zoom','brightness','contrast','sharpen'].forEach(function(id){$(id).oninput=function(){edit[id]=id==='zoom'?+this.value/100:+this.value;drawPreview()}});
   $('crop').onclick=function(){if(!cropStart){toast('Drag on the image first');return}applyCrop()};
-  $('preview').onpointerdown=function(e){var r=this.getBoundingClientRect();cropStart={x:e.clientX-r.left,y:e.clientY-r.top,ex:e.clientX-r.left,ey:e.clientY-r.top};this.setPointerCapture(e.pointerId)};
-  $('preview').onpointermove=function(e){if(cropStart){var r=this.getBoundingClientRect();cropStart.ex=e.clientX-r.left;cropStart.ey=e.clientY-r.top}};
-  $('preview').onpointerup=function(){if(cropStart)toast('Crop area selected — tap Crop')};
+  function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
+  function updateRegionBox(a,b){var img=$('preview'),wrap=$('previewWrap'),ir=img.getBoundingClientRect(),wr=wrap.getBoundingClientRect();var x1=clamp(Math.min(a.x,b.x),0,ir.width),y1=clamp(Math.min(a.y,b.y),0,ir.height),x2=clamp(Math.max(a.x,b.x),0,ir.width),y2=clamp(Math.max(a.y,b.y),0,ir.height),box=$('regionSelectionBox');box.hidden=false;box.style.left=(ir.left-wr.left+x1)+'px';box.style.top=(ir.top-wr.top+y1)+'px';box.style.width=Math.max(0,x2-x1)+'px';box.style.height=Math.max(0,y2-y1)+'px'}
+  $('regionSelectBtn').onclick=function(){if(!file)return;regionMode=!regionMode;cropStart=null;if(regionMode){this.textContent='Drag over text…';this.classList.add('active');$('readRegionBtn').disabled=true;$('regionHelp').textContent='Drag across the text in the photo, then tap Read selected area.';$('previewWrap').classList.add('selecting-region')}else{this.textContent='Select text area';this.classList.remove('active');$('previewWrap').classList.remove('selecting-region')}};
+  $('preview').onpointerdown=function(e){var r=this.getBoundingClientRect();if(regionMode){var x=clamp(e.clientX-r.left,0,r.width),y=clamp(e.clientY-r.top,0,r.height);regionStart={x:x,y:y,ex:x,ey:y};updateRegionBox(regionStart,regionStart);this.setPointerCapture(e.pointerId);e.preventDefault();return}cropStart={x:e.clientX-r.left,y:e.clientY-r.top,ex:e.clientX-r.left,ey:e.clientY-r.top};this.setPointerCapture(e.pointerId)};
+  $('preview').onpointermove=function(e){var r=this.getBoundingClientRect();if(regionMode&&regionStart){regionStart.ex=clamp(e.clientX-r.left,0,r.width);regionStart.ey=clamp(e.clientY-r.top,0,r.height);updateRegionBox(regionStart,{x:regionStart.ex,y:regionStart.ey});return}if(cropStart){cropStart.ex=e.clientX-r.left;cropStart.ey=e.clientY-r.top}};
+  $('preview').onpointerup=function(){if(regionMode&&regionStart){var w=Math.abs(regionStart.ex-regionStart.x),h=Math.abs(regionStart.ey-regionStart.y);if(w>8&&h>8){$('readRegionBtn').disabled=false;$('regionHelp').textContent='Area selected. Tap “Read selected area” to recognise just that part.'}else{regionStart=null;$('regionSelectionBox').hidden=true}regionMode=false;$('regionSelectBtn').textContent='Select text area';$('regionSelectBtn').classList.remove('active');$('previewWrap').classList.remove('selecting-region');return}if(cropStart)toast('Crop area selected — tap Crop')};
+  $('readRegionBtn').onclick=function(){if(!regionStart)return;var img=$('preview'),r=img.getBoundingClientRect(),sx=Math.round(Math.min(regionStart.x,regionStart.ex)/r.width*img.naturalWidth),sy=Math.round(Math.min(regionStart.y,regionStart.ey)/r.height*img.naturalHeight),sw=Math.round(Math.abs(regionStart.ex-regionStart.x)/r.width*img.naturalWidth),sh=Math.round(Math.abs(regionStart.ey-regionStart.y)/r.height*img.naturalHeight);if(sw<4||sh<4){toast('Select a larger text area');return}var c=document.createElement('canvas');c.width=sw;c.height=sh;c.getContext('2d').drawImage(img,sx,sy,sw,sh,0,0,sw,sh);var btn=$('readRegionBtn');btn.disabled=true;btn.textContent='Reading…';setStatus('Reading the selected image area…');function finishRegion(text,viaCloud){var lines=String(text||'').split(/\r?\n/).map(function(x){return x.trim()}).filter(Boolean);if(!lines.length){setStatus('No text found in that area. Try selecting a slightly larger region.',true);return}snapshot();lines.forEach(function(line){add(line)});render();setStatus('Added '+lines.length+' line(s) from the selected area'+(viaCloud?' using Gemini':'')+'.');$('regionHelp').textContent='Text added to your results. You can select more areas.'}function readRegionLocally(){return Tesseract.recognize(c,'eng').then(function(result){var text=(result.data.text||'').trim();if(!text)throw new Error('No local text');finishRegion(text,false)})}var readPromise=$('cloudOcrConsent').checked?cloudOcr(c).then(function(t){finishRegion(t,true)}).catch(function(){return readRegionLocally()}):readRegionLocally();readPromise.catch(function(){setStatus('Could not read that area. Try a larger selection, or enable Gemini cloud OCR for handwriting and emojis.',true)}).finally(function(){btn.disabled=false;btn.textContent='Read selected area'})};
   $('extractBtn').onclick = extract; $('clearImg').onclick = clearImage;
   $('filter').onchange = render; $('sort').onchange = sortItems;
   $('search').oninput = render;
@@ -286,7 +290,7 @@
   $('selNone').onclick = function () { items.forEach(function (i) { i.sel = false; }); render(); };
   $('addItem').onclick = function () {
     snapshot(); add(''); render();
-    var inputs = $('list').querySelectorAll('input[type=text]');
+    var inputs = $('list').querySelectorAll('[contenteditable="true"]');
     if (inputs.length) { var l = inputs[inputs.length - 1]; l.scrollIntoView({ block: 'nearest' }); l.focus(); }
   };
   $('split').onclick = splitCells; $('dedupe').onclick = dedupe;
@@ -298,7 +302,7 @@
   $('expCsv').onclick = function () { exportData('csv'); };
   $('expXlsx').onclick=function(){exportData('xlsx')};
   $('share').onclick=function(){var text=items.map(function(i){return i.text}).join('\n');if(navigator.share)navigator.share({title:'SnapData result',text:text}).catch(function(){});else copy(false)};
-  $('listTab').onclick=function(){mode='list';$('listTab').classList.add('active');$('tableTab').classList.remove('active');$('list').hidden=false;$('tableWrap').hidden=true;$('itemActions').hidden=false};
-  $('tableTab').onclick=function(){mode='table';buildTable();$('tableTab').classList.add('active');$('listTab').classList.remove('active');$('list').hidden=true;$('tableWrap').hidden=false;$('itemActions').hidden=true;renderTable()};
+  $('listTab').onclick=function(){mode='list';$('listTab').classList.add('active');$('tableTab').classList.remove('active');$('list').hidden=false;$('tableWrap').hidden=true;$('itemActions').hidden=false;$('moreItemTools').hidden=false};
+  $('tableTab').onclick=function(){mode='table';buildTable();$('tableTab').classList.add('active');$('listTab').classList.remove('active');$('list').hidden=true;$('tableWrap').hidden=false;$('itemActions').hidden=true;$('moreItemTools').hidden=true;renderTable()};
   render();
 })();
