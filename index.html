@@ -20,6 +20,7 @@
 <p class="hint">Crop: drag on the image to choose an area, then tap Crop.</p></div>
 <div class="row"><button id="extractBtn" class="btn primary" disabled>Extract data</button><button id="clearImg" class="btn" disabled>Clear image</button></div>
 <div class="ocr-options"><label>Recognition<select id="ocrMode"><option value="auto">Auto (text + table)</option><option value="text">Text / lists</option><option value="numbers">Numbers</option><option value="table">Table</option></select></label><label>Quality<select id="quality"><option value="auto">Auto</option><option value="high">High resolution / small text</option><option value="fast">Fast</option></select></label></div>
+<label class="cloud-ocr-choice"><input id="cloudOcrConsent" type="checkbox"> Allow Gemini cloud OCR fallback for this photo</label><p class="hint">Unchecked by default. If checked, SnapData may send the current image to Gemini only when local OCR confidence is low. Avoid private student details unless you have permission.</p>
 <div id="status" class="status" role="status" aria-live="polite"></div><progress id="bar" max="100" value="0" hidden></progress>
 </section>
 <section class="panel"><h2>2. Review and organise</h2>
