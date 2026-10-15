@@ -132,7 +132,7 @@
     });
   }
 
-  function todayISO() { return new Date().toISOString().slice(0, 10); }
+  function todayISO() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function setHomeworkFormDefaults() {
     if (!$('hwAssigned')) return;
     $('hwAssigned').value = todayISO();
@@ -150,7 +150,7 @@
   function renderHomework() {
     var today = todayISO();
     var soonDate = new Date(); soonDate.setDate(soonDate.getDate() + 7);
-    var soon = soonDate.toISOString().slice(0, 10);
+    var soon = soonDate.getFullYear() + '-' + String(soonDate.getMonth() + 1).padStart(2, '0') + '-' + String(soonDate.getDate()).padStart(2, '0');
     var active = state.homework.filter(function (h) { return h.status === 'Assigned'; });
     $('hwActiveCount').textContent = active.length;
     $('hwSoonCount').textContent = active.filter(function (h) { return h.dueDate && h.dueDate >= today && h.dueDate <= soon; }).length;
@@ -334,7 +334,7 @@
     reader.readAsText(file);
   });
   $('backupClear').addEventListener('click', function () {
-    if (!confirm('Delete all timetable, marks, class log and teacher notes saved by these teacher tools on this device? This cannot be undone.')) return;
+    if (!confirm('Delete all timetable, marks, class log, homework and teacher notes saved by these teacher tools on this device? This cannot be undone.')) return;
     state = { timetable: [], marks: [], logs: [], notes: [], homework: [] }; localStorage.removeItem(KEY);
     renderGrid([]); renderMarks(); renderLogs(); renderNotes(); renderHomework(); setHomeworkFormDefaults(); status('backupStatus', 'Teacher-tool data cleared from this browser.');
   });
