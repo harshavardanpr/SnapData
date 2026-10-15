@@ -126,3 +126,10 @@ footer{max-width:850px;margin:auto;line-height:1.6;padding:20px 18px 28px}
   .nav-icon{font-size:1rem}
 }
 @media(prefers-reduced-motion:reduce){.app-page{animation:none}}
+
+/* Installable app header */
+.top-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;max-width:1040px;margin:0 auto;position:relative;z-index:1}
+.top-heading>div{min-width:0}
+.install-btn{flex:0 0 auto;background:#fff;color:#176b4b;border-color:rgba(255,255,255,.6);box-shadow:0 4px 16px rgba(0,0,0,.12)}
+.install-btn:hover{background:#f0fff6;border-color:#fff}
+@media(max-width:480px){.top-heading{align-items:flex-start;flex-direction:column;gap:12px}.install-btn{min-height:40px}}
