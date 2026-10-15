@@ -24,18 +24,23 @@
   function clearImage(){file=null;sourceImg=null;$('preview').removeAttribute('src');$('previewWrap').hidden=true;$('editor').hidden=true;$('extractBtn').disabled=true;$('clearImg').disabled=true;$('bar').hidden=true;setStatus('')}
 
   function prepare(f) {
-    var c=renderCanvas();if(!c)return Promise.resolve(f);var max=2200,scale=Math.min(1,max/Math.max(c.width,c.height)),o=document.createElement('canvas');o.width=Math.round(c.width*scale);o.height=Math.round(c.height*scale);var x=o.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,o.width,o.height);x.drawImage(c,0,0,o.width,o.height);return new Promise(function(res){o.toBlob(function(b){res(b||f)},'image/png')});
+    // Preserve original pixel dimensions: downscaling here loses small handwriting.
+    // Large images are tiled after loading instead of shrinking the whole page first.
+    var c=renderCanvas();if(!c)return Promise.resolve(f);
+    var o=document.createElement('canvas');o.width=c.width;o.height=c.height;
+    var x=o.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,o.width,o.height);x.drawImage(c,0,0);
+    return new Promise(function(res){o.toBlob(function(b){res(b||f)},'image/png')});
   }
   function tileCanvases(c){var max=2200,over=.12;if(Math.max(c.width,c.height)<=max)return [c];var long=Math.max(c.width,c.height),n=Math.ceil(long/(max*(1-over))),out=[],vertical=c.height>c.width,step=(vertical?c.height:c.width)/n;for(var i=0;i<n;i++){var st=Math.max(0,Math.round(i*step-step*over)),en=Math.min(vertical?c.height:c.width,Math.round((i+1)*step+step*over)),tw=vertical?c.width:en-st,th=vertical?en-st:c.height,t=document.createElement('canvas');t.width=tw;t.height=th;t.getContext('2d').drawImage(c,vertical?0:st,vertical?st:0,tw,th,0,0,tw,th);out.push(t)}return out}
   function rowsFromWords(words){var rows=[];words.forEach(function(w){var t=(w.text||'').trim();if(!t)return;var cy=(w.bbox.y0+w.bbox.y1)/2,row=null;for(var i=0;i<rows.length;i++)if(Math.abs(cy-rows[i].cy)<Math.max(12,(w.bbox.y1-w.bbox.y0)*.65)){row=rows[i];break}if(!row){row={cy:cy,words:[]};rows.push(row)}row.words.push(w)});rows.sort(function(a,b){return a.cy-b.cy});return rows.map(function(row){row.words.sort(function(a,b){return a.bbox.x0-b.bbox.x0});var out='',last=null;row.words.forEach(function(w){if(last!==null&&w.bbox.x0-last>Math.max(18,(w.bbox.y1-w.bbox.y0)*1.5))out+='\t';else if(out)out+=' ';out+=(w.text||'').trim();last=w.bbox.x1});return out.trim()}).filter(Boolean)}
   function extract(){
     if(!file||busy)return;if(typeof Tesseract==='undefined'){setStatus('OCR library failed to load. Check your internet connection and reload.',true);return}
     busy=true;$('extractBtn').disabled=true;var bar=$('bar');bar.hidden=false;bar.value=0;setStatus('Preparing image…');
-    var modeChoice=$('ocrMode').value,quality=$('quality').value,kind=modeChoice==='auto'?'table':modeChoice;
+    var modeChoice=$('ocrMode').value,quality=$('quality').value,kind=modeChoice;
     prepare(file).then(function(base){var canvas=document.createElement('canvas'),im=new Image();im.src=URL.createObjectURL(base);return new Promise(function(resolve){im.onload=function(){canvas.width=im.width;canvas.height=im.height;canvas.getContext('2d').drawImage(im,0,0);resolve(canvas)}})}).then(function(c){
-      var tiles=quality==='high'?tileCanvases(c):[c],results=[],idx=0;
+      var needsTiles=Math.max(c.width,c.height)>2400;var tiles=(quality==='high'||(quality==='auto'&&needsTiles))?tileCanvases(c):[c],results=[],idx=0;
       function next(){if(idx>=tiles.length){finish();return}setStatus('Reading section '+(idx+1)+' of '+tiles.length+'…');var cfg={logger:function(m){if(m.status==='recognizing text'){bar.value=Math.round(((idx+m.progress)/tiles.length)*100);setStatus('Reading text… '+bar.value+'%')}}};if(kind==='numbers')cfg.config={tessedit_char_whitelist:'0123456789.,%$€£¥₹-+()'};Tesseract.recognize(tiles[idx],'eng',cfg).then(function(r){results.push(r);idx++;next()}).catch(function(){if(idx===0&&tiles.length>1){tiles=[c];idx=0;results=[];setStatus('Trying OCR fallback…');next()}else{setStatus('OCR failed.',true);done()}})}
-      function finish(){var lines=[];results.forEach(function(r){var got=(kind==='table'&&r.data.words)?rowsFromWords(r.data.words):(r.data.text||'').split(/\r?\n/).map(function(x){return x.trim()}).filter(Boolean);lines=lines.concat(got)});lines=lines.filter(function(x,i,a){return x&&a.indexOf(x)===i});if(!lines.length){setStatus('No text found. Try a sharper, well-lit photo.',true);done();return}snapshot();lines.forEach(function(l){add(l)});if(lines.some(function(l){return l.indexOf('\t')>=0}))table=lines.map(function(l){return l.split('\t')});setStatus('Found '+lines.length+' lines. Edit, organise or export below.');render();done()}
+      function finish(){var lines=[];results.forEach(function(r){var textLines=(r.data.text||'').split(/\r?\n/).map(function(x){return x.trim()}).filter(Boolean);var got=textLines;if((kind==='table'||kind==='auto')&&r.data.words){var rowLines=rowsFromWords(r.data.words);if(kind==='table'){got=rowLines}else if(kind==='auto'){var tabbed=rowLines.filter(function(x){return x.indexOf('\t')>=0});var consistent=tabbed.length>=2&&tabbed.filter(function(x){return x.split('\t').length>=2}).length>=Math.ceil(tabbed.length*.65);got=consistent?rowLines:textLines}}lines=lines.concat(got)});lines=lines.filter(function(x,i,a){return x&&a.indexOf(x)===i});if(!lines.length){setStatus('No text found. Try a sharper, well-lit photo.',true);done();return}snapshot();lines.forEach(function(l){add(l)});if(lines.some(function(l){return l.indexOf('\t')>=0}))table=lines.map(function(l){return l.split('\t')});setStatus('Found '+lines.length+' lines. Edit, organise or export below.');render();done()}
       function done(){busy=false;$('extractBtn').disabled=!file;bar.hidden=true}next();
     }).catch(function(e){setStatus('Could not read the image: '+(e.message||'unknown error'),true);busy=false;$('extractBtn').disabled=!file;bar.hidden=true});
   }
@@ -193,7 +198,31 @@
     toast('Exported ' + list.length + ' items');
   }
 
+  /* ---------- Gemini summaries ---------- */
+  function summarySource(){
+    var selected=items.filter(function(i){return i.sel;});
+    var chosen=$('summaryScope').value==='selected'?selected:items;
+    return chosen.map(function(i){return i.text;}).join('\n').trim();
+  }
+  function summarize(){
+    var source=summarySource();
+    if(!source){toast($('summaryScope').value==='selected'?'Select items first':'Extract some notes first');return}
+    if(source.length>40000){toast('Please summarise up to 40,000 characters at a time');return}
+    var button=$('summaryBtn'),out=$('summaryOutput');button.disabled=true;out.textContent='Creating summary…';
+    fetch('https://snapdata-summary-api.onrender.com/api/summarize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:source,style:$('summaryStyle').value})})
+      .then(function(r){return r.json().then(function(data){if(!r.ok)throw new Error(data.error||'Summary service unavailable');return data})})
+      .then(function(data){out.textContent=data.summary||'No summary was returned.';$('copySummary').disabled=!data.summary;toast('Summary ready')})
+      .catch(function(e){out.textContent='Summary could not be created. The summary API must be deployed and configured on Render. Your extracted notes are still here. ('+e.message+')';$('copySummary').disabled=true})
+      .finally(function(){button.disabled=false});
+  }
+  function copySummary(){
+    var text=$('summaryOutput').textContent;if(!text||text==='Your summary will appear here.'||text==='Creating summary…')return;
+    if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(text).then(function(){toast('Summary copied')},function(){toast('Copy failed')});
+    else{var ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('Summary copied')}catch(e){toast('Copy failed')}ta.remove()}
+  }
+
   /* ---------- wire up ---------- */
+  $('summaryBtn').onclick=summarize;$('copySummary').onclick=copySummary;
   $('cam').onchange = onFile; $('up').onchange = onFile;
   $('saveEnhanced').onclick=saveEnhanced;$('resetEdit').onclick=resetEdit;$('rotL').onclick=function(){edit.rotation-=90;drawPreview()};$('rotR').onclick=function(){edit.rotation+=90;drawPreview()};
   ['zoom','brightness','contrast','sharpen'].forEach(function(id){$(id).oninput=function(){edit[id]=id==='zoom'?+this.value/100:+this.value;drawPreview()}});
