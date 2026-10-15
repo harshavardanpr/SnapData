@@ -67,7 +67,7 @@
     var modeChoice=$('ocrMode').value,quality=$('quality').value,kind=modeChoice;
     prepare(file).then(function(base){var canvas=document.createElement('canvas'),im=new Image();im.src=URL.createObjectURL(base);return new Promise(function(resolve){im.onload=function(){canvas.width=im.width;canvas.height=im.height;canvas.getContext('2d').drawImage(im,0,0);resolve(canvas)}})}).then(function(c){
       var needsTiles=Math.max(c.width,c.height)>2400;var useTiles=quality==='high'||(quality==='auto'&&needsTiles);var tiles=useTiles?tileCanvases(c):[c];var enhancedTiles=[];if(kind==='auto'&&quality==='auto'){var enhancedCanvas=autoEnhanceCanvas(c);enhancedTiles=useTiles?tileCanvases(enhancedCanvas):[enhancedCanvas]}var results=[],idx=0;
-      function next(){if(idx>=tiles.length){finish();return}setStatus('Reading section '+(idx+1)+' of '+tiles.length+'…');var cfg={logger:function(m){if(m.status==='recognizing text'){bar.value=Math.round(((idx+m.progress)/tiles.length)*100);setStatus('Reading text… '+bar.value+'%')}}};if(kind==='numbers')cfg.config={tessedit_char_whitelist:'0123456789.,%$€£¥₹-+()'};Tesseract.recognize(tiles[idx],'eng',cfg).then(function(r){if(enhancedTiles.length){setStatus('Comparing original and enhanced text…');return Tesseract.recognize(enhancedTiles[idx],'eng',cfg).then(function(er){results.push((er.data.confidence||0)>(r.data.confidence||0)?er:r)}).catch(function(){results.push(r)})}results.push(r)}).then(function(){idx++;next()}).catch(function(){if(idx===0&&tiles.length>1){tiles=[c];idx=0;results=[];setStatus('Trying OCR fallback…');next()}else if($('cloudOcrConsent')&&$('cloudOcrConsent').checked){setStatus('Local OCR failed. Trying the optional Gemini fallback…');cloudOcr(c).then(function(text){var cloudLines=text.split(/\r?\n/).map(function(x){return x.trim()}).filter(Boolean);if(!cloudLines.length)throw new Error('No text returned');snapshot();cloudLines.forEach(function(l){add(l)});var cloudTable=detectStructuredTable(cloudLines);if(cloudTable)table=cloudTable;setStatus('Found '+cloudLines.length+' lines using Gemini fallback'+(cloudTable?' and detected a table automatically':'')+'. Check names and numbers before exporting.');render();done()}).catch(function(){setStatus('Both local and cloud OCR failed. Try a clearer photo or crop.',true);done()})}else{setStatus('OCR failed.',true);done()}})}
+      function next(){if(idx>=tiles.length){finish();return}setStatus('Reading section '+(idx+1)+' of '+tiles.length+'…');var cfg={logger:function(m){if(m.status==='recognizing text'){bar.value=Math.round(((idx+m.progress)/tiles.length)*100);setStatus('Reading text… '+bar.value+'%')}}};if(kind==='numbers')cfg.config={tessedit_char_whitelist:'0123456789.,%$€£¥₹-+()'};Tesseract.recognize(tiles[idx],'eng',cfg).then(function(r){if(enhancedTiles.length){setStatus('Comparing original and enhanced text…');return Tesseract.recognize(enhancedTiles[idx],'eng',cfg).then(function(er){results.push((er.data.confidence||0)>(r.data.confidence||0)?er:r)}).catch(function(){results.push(r)})}results.push(r)}).then(function(){idx++;next()}).catch(function(){if(idx===0&&tiles.length>1){tiles=[c];idx=0;results=[];setStatus('Trying OCR fallback…');next()}else if($('cloudOcrConsent')&&$('cloudOcrConsent').checked){setStatus('Local OCR failed. Trying the optional Gemini fallback…');cloudOcr(c).then(function(text){var cloudLines=text.split(/\r?\n/).map(function(x){return x.trim()}).filter(Boolean);if(!cloudLines.length)throw new Error('No text returned');snapshot();cloudLines.forEach(function(l){add(l)});var cloudTable=detectStructuredTable(cloudLines);if(cloudTable)table=cloudTable;setStatus('Found '+cloudLines.length+' lines using Gemini fallback'+(cloudTable?' and detected a table automatically':'')+'. Check names and numbers before exporting.');if(cloudTable)activateTableView();render();done()}).catch(function(){setStatus('Both local and cloud OCR failed. Try a clearer photo or crop.',true);done()})}else{setStatus('OCR failed.',true);done()}})}
       function finish(){
         var lines=[];results.forEach(function(r){var textLines=(r.data.text||'').split(/\r?\n/).map(function(x){return x.trim()}).filter(Boolean);var got=textLines;if((kind==='table'||kind==='auto')&&r.data.words){var rowLines=rowsFromWords(r.data.words);if(kind==='table'){got=rowLines}else if(kind==='auto'){var tabbed=rowLines.filter(function(x){return x.indexOf('\t')>=0});var consistent=tabbed.length>=2&&tabbed.filter(function(x){return x.split('\t').length>=2}).length>=Math.ceil(tabbed.length*.65);got=consistent?rowLines:textLines}}lines=lines.concat(got)});
         lines=lines.filter(function(x,i,a){return x&&a.indexOf(x)===i});
@@ -77,7 +77,7 @@
           finalLines=finalLines.filter(function(x,i,a){return a.indexOf(x)===i});
           if(!finalLines.length){setStatus('No text found. Try a sharper, well-lit photo.',true);done();return}
           snapshot();table=[];finalLines.forEach(function(l){add(l)});var detected=detectStructuredTable(finalLines);if(detected)table=detected;
-          setStatus('Found '+finalLines.length+' lines'+(source==='cloud'?' using Gemini fallback':'')+(detected?' and detected a table automatically':'')+'. Check names, numbers and table columns before exporting.');render();done();
+          setStatus('Found '+finalLines.length+' lines'+(source==='cloud'?' using Gemini fallback':'')+(detected?' and detected a table automatically':'')+'. Check names, numbers and table columns before exporting.');if(detected)activateTableView();render();done();
         }
         if($('cloudOcrConsent')&&$('cloudOcrConsent').checked){
           setStatus('Using Gemini cloud OCR (you opted in)…');
@@ -106,7 +106,7 @@
       {split:function(x){return x.split('|')},weight:5},
       {split:function(x){return x.split('\t')},weight:6},
       {split:function(x){return x.split(';')},weight:4},
-      {split:function(x){return x.split(',')},weight:3},
+      {split:function(x){return x.split(',')},weight:3,minCols:3},
       {split:function(x){return x.split(/\s{2,}/)},weight:4}
     ],best=null;
     candidates.forEach(function(c){
@@ -117,16 +117,16 @@
       var most=Object.keys(freq).map(Number).sort(function(a,b){return freq[b]-freq[a]})[0];
       var consistency=freq[most]/clean.length;
       var score=consistency*c.weight+Math.min(most,5)*.15;
-      if(most>=2&&consistency>=.7&&freq[most]>=2&&(!best||score>best.score))best={rows:rows,score:score};
+      if(most>=Math.max(2,c.minCols||2)&&consistency>=.7&&freq[most]>=2&&(!best||score>best.score))best={rows:rows,score:score};
     });
     return best?best.rows:null;
   }
+  function activateTableView(){mode='table';$('tableTab').classList.add('active');$('listTab').classList.remove('active');$('list').hidden=true;$('tableWrap').hidden=false;$('itemActions').hidden=true;$('moreItemTools').hidden=true;renderTable()}
   function autoOrganise(showMessage){
     if(!items.length){toast('Extract some data first');return false}
     var detected=detectStructuredTable(items.map(function(i){return i.text}));
     if(!detected){toast('No clear rows or columns detected. Try Auto (text + table) or Table recognition.');return false}
-    snapshot();table=detected;syncItemsFromTable();mode='table';
-    $('tableTab').classList.add('active');$('listTab').classList.remove('active');$('list').hidden=true;$('tableWrap').hidden=false;$('itemActions').hidden=true;$('moreItemTools').hidden=true;renderTable();render();
+    snapshot();table=detected;syncItemsFromTable();activateTableView();render();
     if(showMessage!==false)toast('Structured '+table.length+' rows into a table — review it before exporting');
     return true;
   }
