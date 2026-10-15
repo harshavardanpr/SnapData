@@ -76,7 +76,7 @@
           finalLines=finalLines.map(function(x){return String(x).trim()}).filter(function(x){return x});
           finalLines=finalLines.filter(function(x,i,a){return a.indexOf(x)===i});
           if(!finalLines.length){setStatus('No text found. Try a sharper, well-lit photo.',true);done();return}
-          snapshot();finalLines.forEach(function(l){add(l)});if(finalLines.some(function(l){return l.indexOf('\t')>=0}))table=finalLines.map(function(l){return l.split('\t')});
+          snapshot();table=[];finalLines.forEach(function(l){add(l)});if(finalLines.some(function(l){return l.indexOf('\t')>=0}))table=finalLines.map(function(l){return l.split('\t')});
           setStatus('Found '+finalLines.length+' lines'+(source==='cloud'?' using Gemini fallback':'')+'. Check names and numbers before exporting.');render();done();
         }
         if($('cloudOcrConsent')&&$('cloudOcrConsent').checked){
@@ -213,18 +213,56 @@
     var s = items.filter(function (i) { return i.sel; });
     return selectedOnly ? s : (s.length ? s : items);
   }
+  function looksLikeListItem(line) {
+    return /^(?:[•●▪◦*-]\s+|(?:\d+|[a-zA-Z])[.)]\s+|☐|☑|✓|✔)/.test(line.trim());
+  }
+  function formatCopiedText(lines) {
+    var format=$('copyFormat')?$('copyFormat').value:'smart';
+    lines=lines.map(function(x){return String(x||'').trim()}).filter(Boolean);
+    if(format==='lines')return lines.join('\n');
+    if(format==='join')return lines.join(' ').replace(/\s+/g,' ').trim();
+    var out=[];
+    lines.forEach(function(line){
+      if(!out.length){out.push(line);return}
+      var prev=out[out.length-1];
+      if(looksLikeListItem(line)||/[.!?;:]$/.test(prev)){out.push(line)}
+      else{out[out.length-1]=prev+' '+line}
+    });
+    return out.join('\n');
+  }
+  function tableCopyText(selectedOnly) {
+    buildTable();
+    var cells=selectedOnly?selectedTableCells():[];
+    if(!cells.length)return table.map(function(row){return row.join('\t')}).join('\n');
+    var rs=cells.map(function(c){return c.r}),cs=cells.map(function(c){return c.c});
+    var r0=Math.min.apply(null,rs),r1=Math.max.apply(null,rs),c0=Math.min.apply(null,cs),c1=Math.max.apply(null,cs),out=[];
+    for(var r=r0;r<=r1;r++){var row=[];for(var c=c0;c<=c1;c++){var chosen=cells.some(function(p){return p.r===r&&p.c===c});row.push(chosen?(table[r]&&table[r][c]||''):'')}out.push(row.join('\t'))}
+    return out.join('\n');
+  }
   function copy(selectedOnly) {
-    var list = selectedOnly ? pick(true) : items;
-    if (!list.length) { toast(selectedOnly ? 'Nothing selected' : 'Nothing to copy'); return; }
-    var text = list.map(function (i) { return i.text; }).join('\n');
-    var done = function () { toast('Copied ' + list.length + ' items'); };
-    var fallback = function () {
-      var ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
-      document.body.appendChild(ta); ta.select();
-      try { document.execCommand('copy'); done(); } catch (e) { toast('Copy failed'); }
+    var text='',count=0,hasTabularItems=items.some(function(i){return i.text.indexOf('\\t')>=0}),copyAsTable=mode==='table'||(table.length>0&&hasTabularItems);
+    if(copyAsTable){
+      var cells=selectedOnly&&mode==='table'?selectedTableCells():[];
+      if(selectedOnly&&mode==='table'&&!cells.length){toast('Select some table cells first');return}
+      if(selectedOnly&&mode!=='table'){
+        var chosenRows=pick(true);
+        if(!chosenRows.length){toast('Nothing selected');return}
+        text=chosenRows.map(function(i){return i.text}).join('\\n');count=chosenRows.length;
+      }else{text=tableCopyText(selectedOnly&&mode==='table');count=cells.length||table.length}
+      if(!text.trim()){toast('Nothing to copy');return}
+    }else{
+      var list=selectedOnly?pick(true):items;
+      if(!list.length){toast(selectedOnly?'Nothing selected':'Nothing to copy');return}
+      text=formatCopiedText(list.map(function(i){return i.text}));count=list.length;
+    }
+    var done=function(){toast('Copied '+count+(copyAsTable?' table cells/rows':' items'))};
+    var fallback=function(){
+      var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+      document.body.appendChild(ta);ta.select();
+      try{document.execCommand('copy');done()}catch(e){toast('Copy failed')}
       document.body.removeChild(ta);
     };
-    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
+    if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(text).then(done,fallback);else fallback();
   }
   function download(name, mime, content) {
     var b = new Blob([content], { type: mime + ';charset=utf-8' }), a = document.createElement('a');
