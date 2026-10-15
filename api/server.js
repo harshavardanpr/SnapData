@@ -14,7 +14,7 @@ app.use(cors({
     return callback(new Error("Origin not allowed"));
   }
 }));
-app.use(express.json({ limit: "50kb" }));
+app.use(express.json({ limit: "200kb" }));
 
 const requests = new Map();
 app.use("/api/", (req, res, next) => {
