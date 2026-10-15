@@ -6,9 +6,14 @@
 <meta name="theme-color" content="#1f3a2e">
 <title>SnapData – Photo to Data</title>
 <link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SnapData">
 </head>
 <body>
-<header class="top"><h1>SnapData</h1><p>Turn photos into clean, editable data. Your images stay in your browser.</p></header>
+<header class="top"><div class="top-heading"><div><h1>SnapData</h1><p>Turn photos into clean, editable data. Your images stay in your browser.</p></div><button id="installBtn" class="btn install-btn" type="button" hidden>Install app</button></div></header>
 <nav class="page-nav" aria-label="SnapData tools">
   <button class="page-link active" type="button" data-page="extract"><span class="nav-icon">↥</span><span>Extract</span></button>
   <button class="page-link" type="button" data-page="results"><span class="nav-icon">☷</span><span>Results</span></button>
@@ -62,5 +67,5 @@
 </section>
 </div>
 </main><div id="toast" class="toast" role="status" aria-live="polite"></div><footer>No accounts. No ads. Photos stay in your browser for OCR and editing. Summary text is sent to Gemini only when you request a summary.</footer>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="script.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="script.js"></script><script src="pwa.js"></script>
 </body></html>
