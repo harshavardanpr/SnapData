@@ -6,6 +6,7 @@ var APP_SHELL = [
   './style.css',
   './script.js',
   './pwa.js',
+  './timetable.js',
   './manifest.json',
   './icon.svg'
 ];
