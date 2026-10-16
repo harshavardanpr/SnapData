@@ -23,6 +23,9 @@
   <button class="page-link" type="button" data-page="timetable"><span class="nav-icon">▦</span><span>TT Copier</span></button>
   <button class="page-link" type="button" data-page="teacher-tools"><span class="nav-icon">✎</span><span>Teacher Tools</span></button>
 </nav>
+
+<details class="global-layout-customiser" id="globalLayoutCustomiser"><summary><span>Customise SnapData</span><span class="hint">Choose, show, hide and rearrange sections on every page</span></summary><div class="layout-customiser-body"><label for="layoutPageSelect">Page to customise</label><select id="layoutPageSelect"><option value="extract">Extract</option><option value="results">Results</option><option value="calculate">Calculate</option><option value="export">Copy &amp; Export</option><option value="summary">Summarise</option><option value="timetable">TT Copier</option><option value="teacher-tools">Teacher Tools</option></select><p class="hint">Tick sections to show them. Drag the ⠿ handle beside a section heading or use the arrows. Layout is saved locally in this browser.</p><div id="layoutSectionChoices" class="layout-section-choices"></div><h3>Page navigation</h3><p class="hint">Hide pages you don't use or reorder them. At least one page must remain visible.</p><div id="layoutPageChoices" class="layout-page-choices"></div><div class="row wrap"><button class="btn" id="resetGlobalLayout" type="button">Reset layout settings</button></div><p id="globalLayoutStatus" class="status" role="status" aria-live="polite"></p></div></details>
+
 <main>
 <div class="app-page" id="page-extract">
 <section class="panel"><h2>Extract from a photo</h2>
@@ -151,5 +154,5 @@
 </div>
 </section></div>
 </main><div id="toast" class="toast" role="status" aria-live="polite"></div><footer>No accounts. No ads. Photos stay in your browser for OCR and editing. Summary text is sent to Gemini only when you request a summary.</footer>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="file-library.js"></script><script src="script.js"></script><script src="timetable.js"></script><script src="teacher-tools.js"></script><script src="pwa.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="file-library.js"></script><script src="script.js"></script><script src="timetable.js"></script><script src="teacher-tools.js"></script><script src="page-customizer.js"></script><script src="pwa.js"></script>
 </body></html>
